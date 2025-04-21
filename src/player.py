@@ -1,10 +1,13 @@
 import sys
 import vlc
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSizePolicy
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QTimer, pyqtSignal
+
 
 
 class VideoPlayer(QWidget):
+    time_changed = pyqtSignal(float)  # Señal que emite el tiempo actual del video en segundos
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -48,4 +51,6 @@ class VideoPlayer(QWidget):
         return self.mediaplayer.get_time() / 1000.0  # en segundos
 
     def update(self):
-        pass
+        current_time = self.get_time()
+        self.time_changed.emit(current_time)
+
