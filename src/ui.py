@@ -87,6 +87,8 @@ class VideoTaggerApp(QWidget):
         # Añadir los botones de control al layout
         player_layout.addWidget(QLabel("🎮 Controles de Reproducción:"))
         self.play_button = QPushButton("▶️ Play / Pause")
+        self.play_button.setMinimumHeight(40)
+        self.play_button.setStyleSheet("font-size: 16px;")
         self.play_button.clicked.connect(self.toggle_playback)
         player_layout.addWidget(self.play_button)
 
