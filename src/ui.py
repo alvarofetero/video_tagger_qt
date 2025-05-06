@@ -65,8 +65,6 @@ class VideoTaggerApp(QWidget):
         # 🎞️ Reproductor de video a la derecha
         self.video_player = VideoPlayer(self)
         splitter.addWidget(self.video_player) # Añadir reproductor de video al splitter
-       
-        
 
         splitter.setSizes([300, 700])  # Anchos iniciales (izquierda, derecha)
 
@@ -77,7 +75,10 @@ class VideoTaggerApp(QWidget):
         self.add_UI_TagSection(control_layout) # Añadir sección de tags al layout de controles
 
         
-
+    ## Método para añadir la sección de controles de video al layout de controles
+    ## Se encarga de crear la sección de controles de video en la UI
+    ## y añadir los botones y controles necesarios para manejar la reproducción del video
+    ## y la velocidad de reproducción
     def add_UI_PlayerControlsSection(self, layout):
         # Añadir la sección de controles al layout principal
         player_controls = QWidget()
@@ -121,15 +122,19 @@ class VideoTaggerApp(QWidget):
 
         tag_layout.addWidget(QLabel("🛠️ Herramientas de Tag:"))
 
+        tag_layout.addWidget(QLabel("Categoría:"))
         self.category_box = QComboBox()
         self.category_box.addItems(load_categories())
-        tag_layout.addWidget(QLabel("Categoría:"))
         tag_layout.addWidget(self.category_box)
 
         self.start_tag_button = QPushButton("🔖 Marcar Inicio")
+        self.start_tag_button.setMinimumHeight(40)
+        self.start_tag_button.setStyleSheet("font-size: 16px;")
         self.start_tag_button.clicked.connect(self.mark_start)
 
         self.end_tag_button = QPushButton("🏁 Marcar Fin")
+        self.end_tag_button.setMinimumHeight(40)
+        self.end_tag_button.setStyleSheet("font-size: 16px;")
         self.end_tag_button.clicked.connect(self.mark_end)
 
         tag_layout.addWidget(self.start_tag_button)
@@ -237,26 +242,30 @@ class VideoTaggerApp(QWidget):
             # Ajustar el tiempo de inicio al segundo anterior
             current_time = self.video_player.get_time()
             adjusted_time = max(0, current_time - 1.0)  # Resta 1 segundo, sin ir a negativo
-            self.tags.append({"start": adjusted_time, "end": None})
+           # self.tags.append({"start": adjusted_time, "end": None})
+            self.tag_manager.add_start(adjusted_time, category)
             self.update_tag_list()
             self.timeline.update()
-            self.tag_manager.add_start(adjusted_time, category)
+            
             
     def mark_end(self):
-        if self.tags and self.tags[-1]["end"] is None:
+        if self.tag_manager.get_tags() and self.tag_manager.get_tags()[-1]["end"] is None:
             current_time = self.video_player.get_time()
-            self.tags[-1]["end"] = current_time
+            self.tag_manager.get_tags()[-1]["end"] = current_time
             self.update_tag_list()
             print(f"[TAG] Fin en {current_time:.2f}s")
             self.timeline.update()
+            self.tag_manager.add_end(current_time)
 
     # Actualizar la lista de tags en la UI
     def update_tag_list(self):
-        self.tag_list.clear()
-        for i, tag in enumerate(self.tags):
+        self.tag_list.clear() # Limpiar el control de lista antes de actualizar
+        for i, tag in enumerate(self.tag_manager.get_tags()):
             start = f"{tag['start']:.2f}" if tag["start"] is not None else "?"
             end = f"{tag['end']:.2f}" if tag["end"] is not None else "?"
-            self.tag_list.addItem(QListWidgetItem(f"{i+1}. Inicio: {start} | Fin: {end}"))
+            category = tag["category"]
+            self.tag_list.addItem(QListWidgetItem(f"{i+1}. {category} | Inicio: {start} | Fin: {end}"))
+            
 
     # for i, tag in enumerate(self.tag_manager.get_tags()):
     # self.table.setItem(i, 0, QTableWidgetItem(f"{tag['start']:.2f}"))
@@ -274,15 +283,16 @@ class VideoTaggerApp(QWidget):
 
     ## Guardar los tags en un archivo JSON
     def save_tags(self):
-        if not self.tags:
+        if not self.tag_manager.get_tags():
             QMessageBox.information(self, "Info", "No hay tags para guardar.")
             return
         file_path, _ = QFileDialog.getSaveFileName(self, "Guardar Tags", filter="JSON Files (*.json)")
         if file_path:
-            with open(file_path, "w") as f:
-                json.dump(self.tags, f, indent=2)
-            QMessageBox.information(self, "Guardado", "Tags guardados correctamente.")
-            self.timeline.update()
+            if self.tag_manager.save_tags(file_path):
+                print(f"✅ Tags guardados en {file_path}")    
+                QMessageBox.information(self, "Guardado", "Tags guardados correctamente.")
+                self.timeline.update()
+        
 
     ## Cargar los tags desde un archivo JSON
     def load_tags(self):
