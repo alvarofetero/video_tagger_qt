@@ -36,6 +36,8 @@ class TagManager:
     def save_tags(self, path):
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(self.tags, f, indent=2)
+            return True
+        return False
 
     def load_tags(self, path):
         with open(path, 'r', encoding='utf-8') as f:
