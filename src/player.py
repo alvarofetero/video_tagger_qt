@@ -1,3 +1,4 @@
+# VLC-based video player
 import sys
 import vlc
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSizePolicy
@@ -49,6 +50,9 @@ class VideoPlayer(QWidget):
 
     def get_time(self):
         return self.mediaplayer.get_time() / 1000.0  # en segundos
+    
+    def set_time(self, time):
+        self.mediaplayer.set_time(int(time * 1000))  # en milisegundos
 
     def update(self):
         current_time = self.get_time()
