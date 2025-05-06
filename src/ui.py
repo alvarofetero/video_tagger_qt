@@ -165,8 +165,8 @@ class VideoTaggerApp(QWidget):
         
         self.video_player.time_changed.connect(self.timeline.set_current_time)
         
-        layout.addWidget(QLabel("📊 Línea de tiempo de tags:"))
-        layout.addWidget(self.timeline)
+        tag_layout.addWidget(QLabel("📊 Línea de tiempo de tags:"))
+        tag_layout.addWidget(self.timeline)
 
         # Añadir la sección de tags al layout principal
         layout.addWidget(tag_section)
