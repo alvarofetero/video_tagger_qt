@@ -1,4 +1,4 @@
-# exporter.py
+# FFmpeg-based export logic
 from PyQt5.QtCore import QThread, pyqtSignal
 import subprocess
 import os
