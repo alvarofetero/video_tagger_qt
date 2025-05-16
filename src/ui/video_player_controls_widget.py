@@ -3,6 +3,10 @@ from PyQt5.QtCore import Qt
 from .base_component import UIComponent
 
 class PlayerControls(UIComponent):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.video_player = None
+
     def setup_ui(self, layout):
         # Create a group box for player controls
         player_group = QGroupBox("Player Controls")
@@ -34,3 +38,11 @@ class PlayerControls(UIComponent):
         
         player_layout.addWidget(speed_group)
         layout.addWidget(player_group)
+
+    def set_video_player(self, video_player):
+        self.video_player = video_player
+        # Connect the speed changed signal
+        self.video_player.speed_changed.connect(self.update_speed_label)
+
+    def update_speed_label(self, new_rate):
+        self.speed_label.setText(f"🔁 {new_rate:.2f}x")    

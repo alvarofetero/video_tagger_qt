@@ -31,6 +31,8 @@ class VideoTaggerApp(QMainWindow):
         self.video_player = VideoPlayer(self)
          # Pass video_player to FileControls
         self.file_controls = FileControls(self, video_player=self.video_player)
+
+        self.player_controls.set_video_player(self.video_player)  # Set the video player
         
         self.setup_ui()
         self.setup_menu()
@@ -95,6 +97,8 @@ class VideoTaggerApp(QMainWindow):
         self.player_controls.play_button.clicked.connect(self.video_player.toggle_playback)
         self.player_controls.rewind_button.clicked.connect(lambda: self.seek_relative(-5))
         self.player_controls.forward_button.clicked.connect(lambda: self.seek_relative(5))
+        self.player_controls.speed_down_button.clicked.connect(lambda: self.video_player.change_speed(-0.25))
+        self.player_controls.speed_up_button.clicked.connect(lambda: self.video_player.change_speed(0.25))
         # ...more connections...
 
     def edit_categories(self):

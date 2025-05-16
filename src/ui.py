@@ -99,13 +99,13 @@ class VideoTaggerApp(QWidget):
         player_controls = QWidget()
         player_layout = QVBoxLayout(player_controls)
 
-        # Añadir los botones de control al layout
-        player_layout.addWidget(QLabel("🎮 Controles de Reproducción:"))
-        self.play_button = QPushButton("▶️ Play / Pause")
-        self.play_button.setMinimumHeight(40)
-        self.play_button.setStyleSheet("font-size: 16px;")
-        self.play_button.clicked.connect(self.toggle_playback)
-        player_layout.addWidget(self.play_button)
+        # # Añadir los botones de control al layout
+        # player_layout.addWidget(QLabel("🎮 Controles de Reproducción:"))
+        # self.play_button = QPushButton("▶️ Play / Pause")
+        # self.play_button.setMinimumHeight(40)
+        # self.play_button.setStyleSheet("font-size: 16px;")
+        # self.play_button.clicked.connect(self.toggle_playback)
+        # player_layout.addWidget(self.play_button)
 
         # Botones de velocidad de reproducción
         speed_layout = QHBoxLayout()
@@ -315,21 +315,6 @@ class VideoTaggerApp(QWidget):
         self.video_player.set_time(new_time)
         self.logger.info(f"Seeking {'forward' if seconds > 0 else 'backward'} {abs(seconds)}s to {new_time:.2f}s")
 
-
-    # Cargar video desde el disco
-    def load_video(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Seleccionar Video")
-        if file_path:
-            self.video_path = file_path
-            self.video_player.load_video(file_path)
-
-    ## Borrar ya está movido a la clase VideoPlayer en el archivo player.py
-   ## Reproducir / Pausar el video
-    def toggle_playback(self):
-        if self.video_player.mediaplayer.is_playing():
-            self.video_player.mediaplayer.pause()
-        else:
-            self.video_player.mediaplayer.play()
 
     # Marcar el inicio y fin de un tag
     def mark_start(self):

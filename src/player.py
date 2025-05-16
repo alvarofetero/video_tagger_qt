@@ -4,10 +4,9 @@ import vlc
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSizePolicy
 from PyQt5.QtCore import QTimer, pyqtSignal
 
-
-
 class VideoPlayer(QWidget):
     time_changed = pyqtSignal(float)  # Señal que emite el tiempo actual del video en segundos
+    speed_changed = pyqtSignal(float)  # New signal for speed changes
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -57,4 +56,19 @@ class VideoPlayer(QWidget):
     def update(self):
         current_time = self.get_time()
         self.time_changed.emit(current_time)
+
+    ## Reproducir / Pausar el video
+    def toggle_playback(self):
+        if self.mediaplayer.is_playing():
+            self.mediaplayer.pause()
+        else:
+            self.mediaplayer.play()
+
+     ## Cambiar la velocidad de reproducción
+    def change_speed(self, delta):
+        current = self.mediaplayer.get_rate()
+        new_rate = max(0.25, min(4.0, current + delta))
+        self.mediaplayer.set_rate(new_rate)
+        self.speed_changed.emit(new_rate) # Emit the new speed
+        print(f"🎚️ Velocidad: {new_rate:.2f}x")
 
