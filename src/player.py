@@ -1,74 +1,102 @@
-# VLC-based video player
 import sys
 import vlc
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSizePolicy
 from PyQt5.QtCore import QTimer, pyqtSignal
 
+from src.utils.logger import AppLogger
+
 class VideoPlayer(QWidget):
-    time_changed = pyqtSignal(float)  # Señal que emite el tiempo actual del video en segundos
-    speed_changed = pyqtSignal(float)  # New signal for speed changes
+    time_changed = pyqtSignal(float)  # Signal for current video time
+    speed_changed = pyqtSignal(float)  # Signal for speed changes
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.logger = AppLogger.get_logger()
+        self.setup_vlc()
+        self.setup_ui()
+        self.setup_timer()
 
-        # Instancia de VLC
+    def setup_vlc(self):
+        """Initialize VLC components"""
         self.instance = vlc.Instance()
         self.mediaplayer = self.instance.media_player_new()
 
-        # Timer para futuras actualizaciones
-        self.timer = QTimer(self)
-        self.timer.setInterval(100)
-        self.timer.timeout.connect(self.update)
-
-        # Widget donde se proyecta el video
+    def setup_ui(self):
+        """Setup the UI components"""
         self.video_frame = QWidget(self)
         self.video_frame.setStyleSheet("background-color: black;")
-
-        # 🔧 Asegura que el video_frame se expanda
         self.video_frame.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         layout = QVBoxLayout()
         layout.addWidget(self.video_frame)
-        layout.setContentsMargins(0, 0, 0, 0)  # opcional, para eliminar márgenes
+        layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
+    def setup_timer(self):
+        """Setup update timer"""
+        self.timer = QTimer(self)
+        self.timer.setInterval(100)
+        self.timer.timeout.connect(self.update_time)
+
+    def update_time(self):
+        """Update current time and emit signal"""
+        if self.mediaplayer.is_playing():
+            current_time = self.get_time()
+            self.time_changed.emit(current_time)
+
     def load_video(self, path):
+        """Load and prepare video for playback"""
+        if not path:
+            return
+            
         media = self.instance.media_new(path)
         self.mediaplayer.set_media(media)
-
-        # Asigna la ventana de renderizado dependiendo del sistema operativo
-        if sys.platform.startswith("linux"):
+        
+        # Set render window based on platform
+        if sys.platform.startswith('linux'):
             self.mediaplayer.set_xwindow(self.video_frame.winId())
         elif sys.platform == "win32":
             self.mediaplayer.set_hwnd(self.video_frame.winId())
         elif sys.platform == "darwin":
             self.mediaplayer.set_nsobject(int(self.video_frame.winId()))
 
-        # Inicia la reproducción ligeramente después para evitar errores
+        self.timer.start()
         QTimer.singleShot(100, self.mediaplayer.play)
 
-    def get_time(self):
-        return self.mediaplayer.get_time() / 1000.0  # en segundos
-    
-    def set_time(self, time):
-        self.mediaplayer.set_time(int(time * 1000))  # en milisegundos
-
-    def update(self):
-        current_time = self.get_time()
-        self.time_changed.emit(current_time)
-
-    ## Reproducir / Pausar el video
     def toggle_playback(self):
+        """Toggle between play and pause"""
         if self.mediaplayer.is_playing():
             self.mediaplayer.pause()
         else:
             self.mediaplayer.play()
 
-     ## Cambiar la velocidad de reproducción
     def change_speed(self, delta):
+        """Change playback speed"""
         current = self.mediaplayer.get_rate()
         new_rate = max(0.25, min(4.0, current + delta))
         self.mediaplayer.set_rate(new_rate)
-        self.speed_changed.emit(new_rate) # Emit the new speed
-        print(f"🎚️ Velocidad: {new_rate:.2f}x")
+        self.speed_changed.emit(new_rate)
+
+    def get_time(self):
+        """Get current playback time in seconds"""
+        return self.mediaplayer.get_time() / 1000.0
+
+    def set_time(self, seconds):
+        """Set playback position in seconds"""
+        self.mediaplayer.set_time(int(seconds * 1000))
+
+    def seek_relative(self, seconds):
+        """
+        Seek forward or backward relative to current position
+        seconds: int - positive for forward, negative for backward
+        """
+        current_time = self.get_time()
+        if not self.mediaplayer.is_playing():
+            return
+        new_time = max(0, current_time + seconds)
+        total_time = self.mediaplayer.get_length() / 1000.0
+        new_time = min(new_time, total_time)
+        
+        self.set_time(new_time)
+        self.logger.info(f"Seeking {'forward' if seconds > 0 else 'backward'} {abs(seconds)}s to {new_time:.2f}s")
 

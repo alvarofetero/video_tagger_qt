@@ -6,15 +6,17 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 from .base_component import UIComponent
 
-from ui.video_player_widget import VideoPlayer
+from src.player import VideoPlayer
 from ui.video_player_controls_widget import PlayerControls
 from src.ui.tag_widget import TagControls
-from src.player import VideoPlayer
 from src.ui.file_controls_widget import FileControls
+from src.utils.logger import AppLogger
 
 class VideoTaggerApp(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.logger = AppLogger.get_logger()
+        self.logger.info("Starting Video Tagger application")
         self.setWindowTitle("Video Tagger")
         self.setMinimumSize(1000, 600)
         
@@ -95,8 +97,8 @@ class VideoTaggerApp(QMainWindow):
         """
         # Player controls
         self.player_controls.play_button.clicked.connect(self.video_player.toggle_playback)
-        self.player_controls.rewind_button.clicked.connect(lambda: self.seek_relative(-5))
-        self.player_controls.forward_button.clicked.connect(lambda: self.seek_relative(5))
+        self.player_controls.rewind_button.clicked.connect(lambda: self.video_player.seek_relative(-5))
+        self.player_controls.forward_button.clicked.connect(lambda: self.video_player.seek_relative(5))
         self.player_controls.speed_down_button.clicked.connect(lambda: self.video_player.change_speed(-0.25))
         self.player_controls.speed_up_button.clicked.connect(lambda: self.video_player.change_speed(0.25))
         # ...more connections...
