@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtCore import QObject
 
-class UIComponent:
+class UIComponent(QObject):
     def __init__(self, parent=None):
+        super().__init__(parent)  # Initialize QObject
         self.parent = parent
 
     def setup_ui(self, layout):
