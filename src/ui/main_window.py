@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import (
     QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QDialog, QInputDialog,
     QMessageBox, QListWidget, QSpinBox, QLineEdit, QComboBox,
-      QGroupBox, QMainWindow, QSplitter, QMenuBar, QAction, QMenu)
-
+      QGroupBox, QMainWindow, QSplitter, QMenuBar, QAction, QMenu, QStyle)
+from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 
 from tag_manager import TagManager
@@ -14,6 +14,7 @@ from src.ui.tag_widget import TagControls
 from src.ui.file_controls_widget import FileControls
 from src.utils.logger import AppLogger
 
+## Main application window for Video Tagger
 class VideoTaggerApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -53,9 +54,31 @@ class VideoTaggerApp(QMainWindow):
         
         # Archivo menu
         archivo_menu = menubar.addMenu('Archivo')
-        open_action = QAction('Abrir Video', self)
-        open_action.triggered.connect(self.file_controls.load_video)
+        
+        #Open video action
+        open_action = QAction(self.style().standardIcon(QStyle.SP_DialogOpenButton), 'Abrir Video', self)
+        open_action.setShortcut('Ctrl+O')
+        open_action.triggered.connect(self.file_controls.load_video) # Connect to load_video method
         archivo_menu.addAction(open_action)
+        
+        archivo_menu.addSeparator()
+
+        # Save tags action
+        save_action = QAction(self.style().standardIcon(QStyle.SP_CommandLink), 'Guardar Tags', self)
+        save_action.setShortcut('Ctrl+S')
+        #save_action.triggered.connect(self.save_tags)
+        #save_action.triggered.connect(self.file_controls.save_tags)
+        archivo_menu.addAction(save_action)
+
+
+        load_action = QAction('Cargar Tags', self)
+        #load_action.triggered.connect(self.file_controls.load_tags) 
+        archivo_menu.addAction(load_action)
+        export_action = QAction(self.style().standardIcon(QStyle.SP_DialogSaveButton),'Exportar Clip', self)
+        #export_action.triggered.connect(self.file_controls.export_clips)
+        archivo_menu.addAction(export_action)
+        archivo_menu.addSeparator()
+
         
         # Configuración menu
         config_menu = menubar.addMenu('Configuración')
@@ -111,7 +134,7 @@ class VideoTaggerApp(QMainWindow):
         # Tag controls
         self.tag_controls.tag_started.connect(self.on_tag_started)
         self.tag_controls.tag_ended.connect(self.on_tag_ended)
-        # ...more connections...
+     
 
     def on_tag_started(self, category, start_time):
         self.tag_manager.add_start(start_time, category)
