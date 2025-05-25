@@ -2,9 +2,16 @@ from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import QPainter, QColor, QMouseEvent, QFont
 from PyQt5.QtCore import Qt, pyqtSignal, QPoint
 
+# This widget displays a timeline with tags and a current playback position.
+# It allows the user to click on tags to select them and emits a signal with the tag's start time.
 class TimelineWidget(QWidget):
     tag_clicked = pyqtSignal(float)
 
+    ## Constructor
+    # get_duration: function to get the duration of the video
+    # get_tags: function to get the list of tags
+    # parent: parent widget (default is None)
+    # This widget is initialized with a minimum height of 40 pixels.
     def __init__(self, get_duration, get_tags, parent=None):
         super().__init__(parent)
         self.get_duration = get_duration
@@ -13,10 +20,18 @@ class TimelineWidget(QWidget):
         self.highlighted_index = None
         self.current_time = 0.0
 
+    ## This method sets the current playback time of the video.
+    # It takes a time in seconds and updates the current_time attribute.
     def set_current_time(self, time_sec):
         self.current_time = time_sec
         self.update()
 
+    ## This method is called when the widget needs to be repainted.
+    # It uses a QPainter to draw the timeline, tags, and current playback position.
+    # It retrieves the duration and tags from the provided functions and draws them on the widget.
+    # The tags are represented as colored rectangles, and the current playback position is represented as a blue line with a triangle on top.
+    # The tags are drawn with a label indicating their index, and the highlighted tag is drawn with a different color.
+    # The method also handles the case where the duration is not available or the tags are empty.
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
@@ -77,7 +92,8 @@ class TimelineWidget(QWidget):
             painter.drawPolygon(*points)
 
 
-
+    # This method is called when the user clicks on the widget.
+    # It calculates the clicked time based on the mouse position and checks if it falls within any of the tags.
     def mousePressEvent(self, event: QMouseEvent):
         duration = self.get_duration()
         tags = self.get_tags()

@@ -5,14 +5,14 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 
-from tag_manager import TagManager
-from .base_component import UIComponent
+from src.ui.base_component import UIComponent
 
 from src.player import VideoPlayer
 from ui.video_player_controls_widget import PlayerControls
 from src.ui.tag_widget import TagControls
 from src.ui.file_controls_widget import FileControls
 from src.utils.logger import AppLogger
+from src.tag_manager import TagManager
 
 ## Main application window for Video Tagger
 class VideoTaggerApp(QMainWindow):
@@ -38,7 +38,7 @@ class VideoTaggerApp(QMainWindow):
         self.tag_controls = TagControls(self)
         
          # Pass video_player to FileControls
-        self.file_controls = FileControls(self, video_player=self.video_player)
+        self.file_controls = FileControls(self, video_player=self.video_player, tags=self.tag_manager.get_tags())
 
         self.player_controls.set_video_player(self.video_player)  # Set the video player
         self.tag_controls.set_video_player(self.video_player)
@@ -75,7 +75,7 @@ class VideoTaggerApp(QMainWindow):
         #load_action.triggered.connect(self.file_controls.load_tags) 
         archivo_menu.addAction(load_action)
         export_action = QAction(self.style().standardIcon(QStyle.SP_DialogSaveButton),'Exportar Clip', self)
-        #export_action.triggered.connect(self.file_controls.export_clips)
+        export_action.triggered.connect(self.file_controls.export_clips)
         archivo_menu.addAction(export_action)
         archivo_menu.addSeparator()
 
@@ -139,12 +139,12 @@ class VideoTaggerApp(QMainWindow):
     def on_tag_started(self, category, start_time):
         self.tag_manager.add_start(start_time, category)
         self.tag_controls.update_tag_list(self.tag_manager.get_tags())
-        self.logger.info(f"Started tag for {category} at {start_time:.2f}s")
+        self.logger.info(f"[VideoTaggerApp] Started tag for {category} at {start_time:.2f}s")
 
     def on_tag_ended(self, category, end_time):
         self.tag_manager.add_end(end_time)
         self.tag_controls.update_tag_list(self.tag_manager.get_tags())
-        self.logger.info(f"Ended tag for {category} at {end_time:.2f}s")
+        self.logger.info(f"[VideoTaggerApp] Ended tag for {category} at {end_time:.2f}s")
 
     def edit_categories(self):
         """Open a dialog to edit tag categories"""
