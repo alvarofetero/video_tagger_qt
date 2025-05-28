@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QProgressBar, QHBoxLayout, 
-                             QLabel,QGroupBox, QLineEdit, QComboBox, QFileDialog)
+                             QLabel,QGroupBox, QLineEdit, QComboBox, QFileDialog, QMessageBox)
 from PyQt5.QtCore import Qt
 from .base_component import UIComponent
 from exporter import ExporterThread
@@ -13,6 +13,7 @@ class FileControls(UIComponent):
         self.video_player = video_player
         self.tags = tags if tags is not None else []
         self.output_directory = None
+        self.logger = AppLogger.get_logger()
         
         
     def setup_ui(self, layout):
@@ -20,10 +21,11 @@ class FileControls(UIComponent):
         file_group = QGroupBox("File Controls")
         file_layout = QVBoxLayout(file_group)
 
-        # File name input
-        self.file_name_input = QLineEdit()
-        self.file_name_input.setPlaceholderText("Enter file name")
-        file_layout.addWidget(self.file_name_input)
+         # File name input for exports
+        self.filename_input = QLineEdit()  # Changed to match the name used in export_clips
+        self.filename_input.setPlaceholderText("Enter base name for clips")
+        file_layout.addWidget(QLabel("Export Filename:"))
+        file_layout.addWidget(self.filename_input)
 
         # File type selection
         self.file_type_combo = QComboBox()
@@ -34,8 +36,9 @@ class FileControls(UIComponent):
         self.file_size_label = QLabel("File Size: 0 MB")
         file_layout.addWidget(self.file_size_label)
 
+        # Progress bar for exports
         self.progress_bar = QProgressBar()
-        self.progress_bar.setValue(0)
+        self.progress_bar.setVisible(False)
         file_layout.addWidget(self.progress_bar)
 
         # Add the group box to the main layout
@@ -51,8 +54,8 @@ class FileControls(UIComponent):
 
      ## Exportar los clips de video según los tags
     def export_clips(self):
-        AppLogger.get_logger().info("[FileControls] Exporting clips...")
-        AppLogger.get_logger().info("[FileControls] Tags to be exported : %s", self.tags)
+        self.logger.info("[FileControls] Exporting clips...")
+        self.logger.info("[FileControls] Tags to be exported : %s", self.tags)
         if not self.tags or any(tag["end"] is None for tag in self.tags):
             print("⚠️ Algunos tags no tienen fin definido.")
             return
@@ -73,4 +76,18 @@ class FileControls(UIComponent):
             self.export_thread.progress.connect(self.progress_bar.setValue)
             self.export_thread.finished.connect(self.on_export_finished)
             self.export_thread.start()
+
+    def on_export_finished(self):
+        """Handler for when export thread finishes"""
+        self.progress_bar.setVisible(False)
+        self.progress_bar.setValue(0)
+        #self.export_clip_button.setEnabled(True)
+        
+        # Show success message
+        QMessageBox.information(
+            self.parent,
+            "Export Complete",
+            f"All clips have been exported to:\n{self.output_directory}"
+        )
+        self.logger.info(f"Clips exported successfully to {self.output_directory}")
 

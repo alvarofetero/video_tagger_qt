@@ -105,9 +105,13 @@ class VideoTaggerApp(QMainWindow):
         control_layout = QVBoxLayout(controls_panel)
         
         # Add components
-        self.player_controls.setup_ui(control_layout)
-        self.tag_controls.setup_ui(control_layout)
-        self.file_controls.setup_ui(control_layout)
+        self.player_controls.setup_ui(control_layout) ## call setup_ui on player_controls
+        self.tag_controls.setup_ui(control_layout)  ## call setup_ui on tag_controls
+        self.file_controls.setup_ui(control_layout) ## call setup_ui on file_controls
+        
+        # self.file_controls.set_video_player(self.video_player)
+        # self.tag_controls.set_video_player(self.video_player)
+        # self.player_controls.set_video_player(self.video_player)
         
         splitter.addWidget(controls_panel)
         splitter.addWidget(self.video_player)
