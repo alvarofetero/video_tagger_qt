@@ -135,10 +135,14 @@ class VideoTaggerApp(QMainWindow):
         self.player_controls.forward_button.clicked.connect(lambda: self.video_player.seek_relative(5))
         self.player_controls.speed_down_button.clicked.connect(lambda: self.video_player.change_speed(-0.25))
         self.player_controls.speed_up_button.clicked.connect(lambda: self.video_player.change_speed(0.25))
+        
         # Tag controls
         self.tag_controls.tag_started.connect(self.on_tag_started)
         self.tag_controls.tag_ended.connect(self.on_tag_ended)
-     
+
+        # Update file controls when tags change
+        self.tag_controls.tag_started.connect(lambda *args: self.file_controls.set_tags(self.tag_manager.get_tags()))
+        self.tag_controls.tag_ended.connect(lambda *args: self.file_controls.set_tags(self.tag_manager.get_tags()))
 
     def on_tag_started(self, category, start_time):
         self.tag_manager.add_start(start_time, category)
