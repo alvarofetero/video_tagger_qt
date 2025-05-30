@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import (
     QWidget, QPushButton, QVBoxLayout, QSpinBox, QLabel, QHBoxLayout, QGroupBox, QListWidget,
-    QShortcut
+    QShortcut, QGridLayout
 )
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QKeySequence
 from .base_component import UIComponent
 
@@ -33,40 +33,96 @@ class TagControls(QWidget, UIComponent):
         self.video_player = video_player
 
     def setup_ui(self, layout):
-        
         # Create main group box for tags
         tag_group = QGroupBox("Video Tags")
         tag_layout = QVBoxLayout(tag_group)
 
-        tag_section = QWidget(self.parent)
-        tag_layout = QVBoxLayout(tag_section)
+        # Create tag section with self as parent instead of self.parent
+        self.tag_section = QWidget(self)  # Changed from self.parent to self
+        self.tag_section.setFocusPolicy(Qt.StrongFocus)  # Allow keyboard focus
+        self.tag_layout = QVBoxLayout(self.tag_section)
 
-        # Category buttons with shortcuts
-        self.categories = ["Ataque", "Transición", "ABP", "Presión", "Defensa", "Ocasión", "Otros"]
-        self.category_buttons = {}
-        
-        for i, category in enumerate(self.categories):
-            btn = QPushButton(f"{i+1}. {category}")
-            btn.setMinimumHeight(40)
-            btn.setStyleSheet("font-size: 16px;")
-            tag_layout.addWidget(btn)
-            self.category_buttons[category] = btn
-            self.category_buttons[category].clicked.connect(self.on_category_button_clicked)
-            self.category_buttons[category].setProperty("category", category)
-            self.category_buttons[category].setProperty("index", i+1)
-            
-            # Add number shortcut (1-9)
-            if i < 9:  # Only add shortcuts for first 9 categories
-                shortcut = QShortcut(QKeySequence(str(i + 1)), tag_section)
-                shortcut.activated.connect(lambda c=category: self.on_category_shortcut(c))
+        # Create initial category buttons
+        self.create_category_buttons()
 
         ## Lista de tags
         self.tag_list = QListWidget()
-        tag_layout.addWidget(QLabel("📝 Tags creados:"))
+        self.tag_layout.addWidget(QLabel("📝 Tags creados:"))
         self.apply_format_to_taglist(self.tag_list)
-        tag_layout.addWidget(self.tag_list)
+        self.tag_layout.addWidget(self.tag_list)
 
-        layout.addWidget(tag_section)
+        # Add the section to the layout and ensure it's visible
+        layout.addWidget(self.tag_section)
+        self.tag_section.show()  # Ensure widget is visible
+
+    def create_category_button(self, category, index):
+        """Create a single category button with proper setup"""
+        btn = QPushButton(f"{index+1}. {category}")
+        btn.setMinimumHeight(40)
+        btn.setStyleSheet("font-size: 16px;")
+        btn.clicked.connect(self.on_category_button_clicked)
+        btn.setProperty("category", category)
+        btn.setProperty("index", index+1)
+        
+        # Add number shortcut (1-9) if applicable
+        if index < 9:  # Only add shortcuts for first 9 categories
+            # Find the main window
+            from PyQt5.QtWidgets import QMainWindow
+            parent = self
+            while parent and not isinstance(parent, QMainWindow):
+                parent = parent.parentWidget()
+            
+            if parent:  # If we found the main window
+                shortcut = QShortcut(QKeySequence(str(index + 1)), parent)
+                shortcut.activated.connect(lambda c=category: self.on_category_shortcut(c))
+            
+        return btn
+
+    def create_category_buttons(self):
+        """Create all category buttons in a two-column layout"""
+        # Clear existing buttons first
+        if hasattr(self, 'category_buttons'):
+            for btn in self.category_buttons.values():
+                btn.deleteLater()
+        self.category_buttons = {}
+
+        # Create a grid layout for the buttons
+        button_grid = QGridLayout()
+        button_grid.setSpacing(10)  # Add spacing between buttons
+        button_grid.setHorizontalSpacing(10)  # Add horizontal spacing between columns
+        button_grid.setColumnStretch(0, 1)  # Make first column stretch
+        button_grid.setColumnStretch(1, 1)  # Make second column stretch
+
+        # Create new buttons in a grid
+        for i, category in enumerate(self.categories):
+            btn = self.create_category_button(category, i)
+            self.category_buttons[category] = btn
+            row = i // 2
+            col = i % 2
+            button_grid.addWidget(btn, row, col)
+
+        # Remove existing items from tag_layout
+        while self.tag_layout.count():
+            item = self.tag_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        # Add the grid layout to tag_layout
+        self.tag_layout.addLayout(button_grid)
+
+        # Re-add the tag list section
+        self.tag_list = QListWidget()
+        self.tag_layout.addWidget(QLabel("📝 Tags creados:"))
+        self.apply_format_to_taglist(self.tag_list)
+        self.tag_layout.addWidget(self.tag_list)
+
+    def update_category_buttons(self):
+        """Update the category buttons after category list changes"""
+        self.create_category_buttons()
+
+        # If there was an active category that still exists, restore its highlight
+        if self.active_category and self.active_category in self.category_buttons:
+            self.category_buttons[self.active_category].setStyleSheet("background-color: yellow; font-size: 16px;")
 
     def on_category_button_clicked(self):
         """Handle category button clicks for tag creation"""

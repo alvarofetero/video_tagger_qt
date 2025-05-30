@@ -176,6 +176,7 @@ class VideoTaggerApp(QMainWindow):
                 if text not in self.tag_controls.categories:
                     self.tag_controls.categories.append(text)
                     category_list.addItem(text)
+                    self.tag_controls.update_category_buttons()  # Update UI immediately
                 else:
                     QMessageBox.warning(dialog, "Warning", "Category already exists!")
 
@@ -189,8 +190,13 @@ class VideoTaggerApp(QMainWindow):
             if current:
                 idx = category_list.row(current)
                 category = self.tag_controls.categories[idx]
+                # Don't remove if category is active
+                if category == self.tag_controls.active_category:
+                    QMessageBox.warning(dialog, "Warning", "Cannot remove an active category")
+                    return
                 self.tag_controls.categories.remove(category)
                 category_list.takeItem(idx)
+                self.tag_controls.update_category_buttons()  # Update UI immediately
 
         remove_button.clicked.connect(remove_category)
         layout.addWidget(remove_button)

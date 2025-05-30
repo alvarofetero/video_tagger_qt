@@ -1,13 +1,11 @@
 import unittest
+import pytest
 from PyQt5.QtWidgets import QApplication, QSplitter
-from src.ui import VideoTaggerApp
 
+@pytest.mark.usefixtures("qapp")
 class TestVideoTaggerAppUI(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.app = QApplication([])  # Create a QApplication instance for testing
-
     def setUp(self):
+        from src.ui import VideoTaggerApp
         self.window = VideoTaggerApp()  # Create an instance of the VideoTaggerApp
 
     def test_ui_elements_exist(self):
@@ -43,11 +41,6 @@ class TestVideoTaggerAppUI(unittest.TestCase):
         self.assertEqual(splitter.count(), 2, "Splitter does not contain two widgets")
 
     def tearDown(self):
-        self.window.close()  # Close the window after each test
-
-    @classmethod
-    def tearDownClass(cls):
-        cls.app.quit()  # Quit the QApplication instance after all tests
-
-if __name__ == "__main__":
-    unittest.main()
+        if hasattr(self, 'window'):
+            self.window.close()  # Close the window after each test
+            self.window.deleteLater()  # Ensure proper cleanup
