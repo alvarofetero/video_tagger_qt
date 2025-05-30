@@ -12,6 +12,14 @@ class PlayerControls(UIComponent):
         player_group = QGroupBox("Player Controls")
         player_layout = QVBoxLayout(player_group)
 
+        # Time display section
+        time_layout = QHBoxLayout()
+        self.time_label = QLabel("00:00 / 00:00")
+        self.time_label.setStyleSheet("font-size: 14px; font-family: monospace;")
+        self.time_label.setAlignment(Qt.AlignCenter)
+        time_layout.addWidget(self.time_label)
+        player_layout.addLayout(time_layout)
+
         # Play button section
         self.play_button = QPushButton("▶️ Play / Pause")
         self.play_button.setMinimumHeight(40)
@@ -43,6 +51,17 @@ class PlayerControls(UIComponent):
         self.video_player = video_player
         # Connect the speed changed signal
         self.video_player.speed_changed.connect(self.update_speed_label)
+        # Connect the time changed signal
+        self.video_player.time_changed.connect(self.update_time_label)
 
     def update_speed_label(self, new_rate):
-        self.speed_label.setText(f"🔁 {new_rate:.2f}x")    
+        self.speed_label.setText(f"🔁 {new_rate:.2f}x")
+
+    def update_time_label(self, current_time):
+        if self.video_player:
+            total_time = self.video_player.mediaplayer.get_length() / 1000.0  # Convert to seconds
+            current_mins = int(current_time // 60)
+            current_secs = int(current_time % 60)
+            total_mins = int(total_time // 60)
+            total_secs = int(total_time % 60)
+            self.time_label.setText(f"{current_mins:02}:{current_secs:02} / {total_mins:02}:{total_secs:02}")

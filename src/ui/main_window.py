@@ -85,6 +85,10 @@ class VideoTaggerApp(QMainWindow):
         categories_action = QAction('Categorías', self)
         categories_action.triggered.connect(self.edit_categories)
         config_menu.addAction(categories_action)
+
+        time_settings_action = QAction('Ajustes de Tiempo', self)
+        time_settings_action.triggered.connect(self.edit_time_settings)
+        config_menu.addAction(time_settings_action)
         
         # Salir action
         salir_action = QAction('Salir', self)
@@ -197,3 +201,47 @@ class VideoTaggerApp(QMainWindow):
         
         # Update tag controls after dialog closes
         self.tag_controls.update_category_buttons()
+
+    def edit_time_settings(self):
+        """Open a dialog to edit time adjustment settings"""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Time Adjustment Settings")
+        layout = QVBoxLayout(dialog)
+
+        # Create spinboxes for time adjustments
+        pre_layout = QHBoxLayout()
+        pre_label = QLabel("Pre-tag duration (seconds):")
+        pre_spin = QSpinBox()
+        pre_spin.setRange(0, 10)
+        pre_spin.setValue(self.tag_controls.pre_spin.value())
+        pre_layout.addWidget(pre_label)
+        pre_layout.addWidget(pre_spin)
+        layout.addLayout(pre_layout)
+
+        post_layout = QHBoxLayout()
+        post_label = QLabel("Post-tag duration (seconds):")
+        post_spin = QSpinBox()
+        post_spin.setRange(0, 10)
+        post_spin.setValue(self.tag_controls.post_spin.value())
+        post_layout.addWidget(post_label)
+        post_layout.addWidget(post_spin)
+        layout.addLayout(post_layout)
+
+        # OK/Cancel buttons
+        button_box = QHBoxLayout()
+        ok_button = QPushButton("OK")
+        cancel_button = QPushButton("Cancel")
+        
+        def on_accept():
+            self.tag_controls.pre_spin.setValue(pre_spin.value())
+            self.tag_controls.post_spin.setValue(post_spin.value())
+            dialog.accept()
+            
+        ok_button.clicked.connect(on_accept)
+        cancel_button.clicked.connect(dialog.reject)
+        
+        button_box.addWidget(ok_button)
+        button_box.addWidget(cancel_button)
+        layout.addLayout(button_box)
+
+        dialog.exec_()
