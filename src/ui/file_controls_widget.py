@@ -14,6 +14,7 @@ class FileControls(UIComponent):
         self.tags = tags if tags is not None else []
         self.output_directory = None
         self.logger = AppLogger.get_logger()
+        self.export_threads = []  # Add this line to store threads
         
         
     def setup_ui(self, layout):
@@ -21,15 +22,10 @@ class FileControls(UIComponent):
         file_group = QGroupBox("File Controls")
         file_layout = QVBoxLayout(file_group)
 
-         # File name input for exports
-        self.filename_input = QLineEdit()  # Changed to match the name used in export_clips
-        self.filename_input.setPlaceholderText("Enter base name for clips")
-        file_layout.addWidget(QLabel("Export Filename:"))
-        file_layout.addWidget(self.filename_input)
-
         # File type selection
         self.file_type_combo = QComboBox()
         self.file_type_combo.addItems(["MP4", "AVI", "MKV"])
+        file_layout.addWidget(QLabel("Export Format:"))
         file_layout.addWidget(self.file_type_combo)
 
         # File size display
@@ -57,7 +53,7 @@ class FileControls(UIComponent):
         self.logger.info("[FileControls] Exporting clips...")
         self.logger.info("[FileControls] Tags to be exported : %s", self.tags)
         if not self.tags or any(tag["end"] is None for tag in self.tags):
-            print("⚠️ Algunos tags no tienen fin definido.")
+            QMessageBox.warning(self.parent, "Warning", "⚠️ Algunos tags no tienen fin definido.")
             return
 
         if not self.output_directory:
@@ -65,23 +61,44 @@ class FileControls(UIComponent):
             
 
         if self.output_directory:
-            filename_base = self.filename_input.text().strip() or "clip"
             self.progress_bar.setMaximum(len(self.tags))
             self.progress_bar.setValue(0)
-            #self.export_clip_button.setEnabled(False)
-
-            self.export_thread = ExporterThread(
-                self.tags, self.video_path, self.output_directory, filename_base
+            self.progress_bar.setVisible(True)
+            
+            # Clear any existing threads
+            self.export_threads.clear()
+            
+        # Create a thread for each tag using its category as filename base
+        for i, tag in enumerate(self.tags):
+            filename_base = f"{tag['category']}_{i+1}"  # Add index to avoid name collisions
+            thread = ExporterThread(
+                [tag], # Pass single tag instead of all tags
+                self.video_path, 
+                self.output_directory, 
+                filename_base
             )
-            self.export_thread.progress.connect(self.progress_bar.setValue)
-            self.export_thread.finished.connect(self.on_export_finished)
-            self.export_thread.start()
+          
+            thread.progress.connect(self.progress_bar.setValue)
+            thread.finished.connect(lambda t=thread: self.on_thread_finished(t))
+            self.export_threads.append(thread)
+            thread.start()
+            self.logger.info(f"Started export thread for {filename_base}")
+
+
+    def on_thread_finished(self, thread):
+        """Handle completion of individual export thread"""
+        if thread in self.export_threads:
+            self.export_threads.remove(thread)
+            thread.deleteLater()
+            
+        # If all threads are done, show completion message
+        if not self.export_threads:
+            self.on_export_finished()
 
     def on_export_finished(self):
-        """Handler for when export thread finishes"""
+        """Handler for when all exports are finished"""
         self.progress_bar.setVisible(False)
         self.progress_bar.setValue(0)
-        #self.export_clip_button.setEnabled(True)
         
         # Show success message
         QMessageBox.information(
@@ -89,5 +106,5 @@ class FileControls(UIComponent):
             "Export Complete",
             f"All clips have been exported to:\n{self.output_directory}"
         )
-        self.logger.info(f"Clips exported successfully to {self.output_directory}")
+        self.logger.info(f"All clips exported successfully to {self.output_directory}")
 
