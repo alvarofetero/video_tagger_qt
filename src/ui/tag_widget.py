@@ -6,14 +6,14 @@ from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtGui import QKeySequence
 from .base_component import UIComponent
 
-class TagControls(UIComponent):
+class TagControls(QWidget, UIComponent):
     tag_started = pyqtSignal(str, float) # Emits (category, start_time)
     tag_ended = pyqtSignal(str, float)   # Emits (category, end_time)
     tag_removed = pyqtSignal(int)        # Emits index of removed tag
 
     def __init__(self, parent=None):
-         # Call parent class __init__ with parent
-        super(TagControls, self).__init__(parent)
+        QWidget.__init__(self, parent)
+        UIComponent.__init__(self, parent)
        
         self.active_category = None
         self.video_player = None

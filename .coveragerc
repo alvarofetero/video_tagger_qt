@@ -1,0 +1,16 @@
+[run]
+source = src/
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if 0:
+    pass
+    if False:
+
+[html]
+directory = coverage_html

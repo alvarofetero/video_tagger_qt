@@ -12,14 +12,16 @@ class VideoPlayer(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.logger = AppLogger.get_logger()
-        self.setup_vlc()
+        
+        # Initialize VLC with silent audio output in test environments
+        if 'pytest' in sys.modules:
+            self.instance = vlc.Instance('--aout=dummy')
+        else:
+            self.instance = vlc.Instance()
+            
+        self.mediaplayer = self.instance.media_player_new()
         self.setup_ui()
         self.setup_timer()
-
-    def setup_vlc(self):
-        """Initialize VLC components"""
-        self.instance = vlc.Instance()
-        self.mediaplayer = self.instance.media_player_new()
 
     def setup_ui(self):
         """Setup the UI components"""

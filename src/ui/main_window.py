@@ -6,9 +6,8 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 
 from src.ui.base_component import UIComponent
-
 from src.player import VideoPlayer
-from ui.video_player_controls_widget import PlayerControls
+from src.ui.video_player_controls_widget import PlayerControls
 from src.ui.tag_widget import TagControls
 from src.ui.file_controls_widget import FileControls
 from src.utils.logger import AppLogger

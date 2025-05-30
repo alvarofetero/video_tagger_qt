@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (QWidget, QPushButton, QVBoxLayout, QProgressBar, QH
                              QLabel, QGroupBox, QLineEdit, QComboBox, QFileDialog, QMessageBox)
 from PyQt5.QtCore import Qt
 from .base_component import UIComponent
-from exporter import ExporterThread
+from src.exporter import ExporterThread
 from src.utils.logger import AppLogger
 
 class FileControls(UIComponent):
