@@ -177,6 +177,8 @@ class VideoTaggerApp(QMainWindow):
                     self.tag_controls.categories.append(text)
                     category_list.addItem(text)
                     self.tag_controls.update_category_buttons()  # Update UI immediately
+                    # Save changes to categories.json
+                    self._save_categories_to_file()
                 else:
                     QMessageBox.warning(dialog, "Warning", "Category already exists!")
 
@@ -197,6 +199,8 @@ class VideoTaggerApp(QMainWindow):
                 self.tag_controls.categories.remove(category)
                 category_list.takeItem(idx)
                 self.tag_controls.update_category_buttons()  # Update UI immediately
+                # Save changes to categories.json
+                self._save_categories_to_file()
 
         remove_button.clicked.connect(remove_category)
         layout.addWidget(remove_button)
@@ -206,6 +210,19 @@ class VideoTaggerApp(QMainWindow):
         
         # Update tag controls after dialog closes
         self.tag_controls.update_category_buttons()
+
+    def _save_categories_to_file(self):
+        """Save current categories back to the JSON file"""
+        import os
+        import json
+        categories_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "categories.json")
+        try:
+            with open(categories_path, 'w', encoding='utf-8') as f:
+                json.dump(self.tag_controls.categories, f, indent=4, ensure_ascii=False)
+            self.logger.info("Categories saved successfully to categories.json")
+        except Exception as e:
+            self.logger.error(f"Error saving categories: {e}")
+            QMessageBox.warning(self, "Error", "Failed to save categories to file.")
 
     def edit_time_settings(self):
         """Open a dialog to edit time adjustment settings"""

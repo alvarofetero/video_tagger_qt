@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QKeySequence
 from .base_component import UIComponent
+from src.config import load_categories
 
 class TagControls(QWidget, UIComponent):
     tag_started = pyqtSignal(str, float) # Emits (category, start_time)
@@ -17,7 +18,8 @@ class TagControls(QWidget, UIComponent):
        
         self.active_category = None
         self.video_player = None
-        self.categories = ["Ataque", "Transición", "ABP", "Presión", "Defensa", "Ocasión", "Otros"]
+        # Load categories from json file instead of hardcoding
+        self.categories = load_categories()
         self.category_buttons = {}
 
         # Initialize time adjustment values (not shown in UI)
