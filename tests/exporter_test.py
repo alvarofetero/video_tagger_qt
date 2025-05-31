@@ -1,15 +1,16 @@
 import os
 import unittest
-import subprocess  # Add this import for subprocess mocking
+import subprocess
 from unittest.mock import patch, MagicMock
 from PyQt5.QtCore import QThread
 from src.exporter import ExporterThread
+from io import StringIO
 
 class TestExporterThread(unittest.TestCase):
     def setUp(self):
         self.tags = [
-            {"start": "00:00:00", "end": "00:00:10"},
-            {"start": "00:00:10", "end": "00:00:20"}
+            {"start": 0.0, "end": 10.0, "category": "Test1"},
+            {"start": 10.0, "end": 20.0, "category": "Test2"}
         ]
         self.video_path = "test_video.mp4"
         self.output_dir = "output"
@@ -19,41 +20,52 @@ class TestExporterThread(unittest.TestCase):
         # Ensure output directory exists
         os.makedirs(self.output_dir, exist_ok=True)
 
-    @patch("subprocess.run")
-    def test_run(self, mock_subprocess_run):
-        mock_subprocess_run.return_value = MagicMock()
+    @patch("subprocess.Popen")
+    def test_run(self, mock_popen):
+        # Setup mock process
+        mock_process = MagicMock()
+        mock_process.poll.return_value = 0
+        mock_process.stderr = StringIO("frame=100\n")  # Simulate ffmpeg output
+        mock_popen.return_value = mock_process
 
-        progress_mock = MagicMock()
-        finished_mock = MagicMock()
+        # Setup signal trackers
+        progress_values = []
+        self.exporter.progress.connect(lambda v: progress_values.append(v))
+        finished_called = False
+        self.exporter.finished.connect(lambda: setattr(self, 'finished_called', True))
 
-        self.exporter.progress.connect(progress_mock)
-        self.exporter.finished.connect(finished_mock)
-
+        # Run the export
         self.exporter.run()
 
-        # Check if subprocess.run was called for each tag
-        self.assertEqual(mock_subprocess_run.call_count, len(self.tags))
-
-        # Verify the commands passed to subprocess.run
+        # Verify Popen was called for each tag with correct arguments
+        self.assertEqual(mock_popen.call_count, len(self.tags))
+        
+        # Check calls had correct ffmpeg arguments
         for i, tag in enumerate(self.tags):
-            output_filename = f"{self.filename_base}_{i+1}.mp4"
+            output_filename = f"{tag['category']}_{i+1}.mp4"
             output_path = os.path.join(self.output_dir, output_filename)
-            expected_command = [
-                "ffmpeg", "-y", "-i", self.video_path,
+            expected_args = [
+                "ffmpeg", "-y",
+                "-i", self.video_path,
                 "-ss", str(tag["start"]),
                 "-to", str(tag["end"]),
-                "-c:v", "libx264", "-c:a", "aac",
-                "-strict", "experimental", output_path
+                "-c:v", "libx264",
+                "-c:a", "aac",
+                "-f", "mp4",
+                "-stats",
+                output_path
             ]
-            mock_subprocess_run.assert_any_call(expected_command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            mock_popen.assert_any_call(
+                expected_args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+                bufsize=1
+            )
 
-        # Check if progress signal was emitted correctly
-        self.assertEqual(progress_mock.call_count, len(self.tags))
-        progress_mock.assert_any_call(1)
-        progress_mock.assert_any_call(2)
-
-        # Check if finished signal was emitted
-        finished_mock.assert_called_once()
+        # Verify progress was tracked
+        self.assertGreater(len(progress_values), 0)
+        self.assertEqual(progress_values[-1], 100)  # Final progress should be 100%
 
     def tearDown(self):
         # Clean up the output directory

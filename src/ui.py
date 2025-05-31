@@ -1,19 +1,22 @@
 from PyQt5.QtWidgets import (
     QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QFileDialog,
-    QLineEdit, QProgressBar, QListWidget, QListWidgetItem, QSplitter, QLabel, QComboBox
+    QLineEdit, QProgressBar, QListWidget, QListWidgetItem, QSplitter, QLabel, QComboBox,
+    QSpinBox, QShortcut, QMessageBox
 )
 from PyQt5.QtWidgets import QMainWindow, QAction, QFileDialog, QMenuBar, QToolBar, QStatusBar
 from PyQt5.QtCore import Qt
 
 import json
 
-from PyQt5.QtWidgets import QInputDialog, QMessageBox
+from PyQt5.QtWidgets import QInputDialog
+from PyQt5.QtGui import QKeySequence
 
 from player import VideoPlayer
 from exporter import ExporterThread
 from config import load_categories
 from timeline import TimelineWidget
 from tag_manager import TagManager
+from logger import Logger
 
 class VideoTaggerApp(QWidget):
  
@@ -22,16 +25,27 @@ class VideoTaggerApp(QWidget):
         self.setWindowTitle("Video Tagger")
         self.setMinimumSize(1000, 600)
 
+         # Initialize logger
+        self.logger = Logger()
+
         # Inicializar variables
         self.video_path = None
         self.output_directory = ""
-        self.tags = [] #eliminar, se usará el tag_manager 
+
+        self.category_buttons = {}
+        self.pending_tag_starts = {}
+        self.pre_tag_seconds = 1  # por defecto
+        self.post_tag_seconds = 1  # por defecto
+
         self.tag_manager = TagManager()
 
         # Llama al método que agrega la barra de menú
         self._create_menu_bar()
         
         self.setup_ui()
+         # Add keyboard shortcuts
+        QShortcut(QKeySequence("Left"), self).activated.connect(lambda: self.seek_relative(-5))
+        QShortcut(QKeySequence("Right"), self).activated.connect(lambda: self.seek_relative(5))
 
     def setup_ui(self):
         # Splitter principal: izquierda controles, derecha video
@@ -72,7 +86,8 @@ class VideoTaggerApp(QWidget):
         main_layout.addWidget(splitter) # Añadir splitter al layout principal
 
         self.add_UI_PlayerControlsSection(control_layout) # Añadir sección de controles al layout de controles
-        self.add_UI_TagSection(control_layout) # Añadir sección de tags al layout de controles
+        ##self.add_UI_TagSection(control_layout) # Añadir sección de tags al layout de controles
+        self.add_UI_SimpleTagSection(control_layout)
 
         
     ## Método para añadir la sección de controles de video al layout de controles
@@ -84,13 +99,13 @@ class VideoTaggerApp(QWidget):
         player_controls = QWidget()
         player_layout = QVBoxLayout(player_controls)
 
-        # Añadir los botones de control al layout
-        player_layout.addWidget(QLabel("🎮 Controles de Reproducción:"))
-        self.play_button = QPushButton("▶️ Play / Pause")
-        self.play_button.setMinimumHeight(40)
-        self.play_button.setStyleSheet("font-size: 16px;")
-        self.play_button.clicked.connect(self.toggle_playback)
-        player_layout.addWidget(self.play_button)
+        # # Añadir los botones de control al layout
+        # player_layout.addWidget(QLabel("🎮 Controles de Reproducción:"))
+        # self.play_button = QPushButton("▶️ Play / Pause")
+        # self.play_button.setMinimumHeight(40)
+        # self.play_button.setStyleSheet("font-size: 16px;")
+        # self.play_button.clicked.connect(self.toggle_playback)
+        # player_layout.addWidget(self.play_button)
 
         # Botones de velocidad de reproducción
         speed_layout = QHBoxLayout()
@@ -108,11 +123,56 @@ class VideoTaggerApp(QWidget):
         self.speed_label.setAlignment(Qt.AlignCenter)
         speed_layout.addWidget(self.speed_label)
 
+
+        # Add forward/rewind buttons
+        seek_layout = QHBoxLayout()
+        self.rewind_button = QPushButton("⏪ -5s")
+        self.rewind_button.clicked.connect(lambda: self.seek_relative(-5))
+        
+        self.forward_button = QPushButton("⏩ +5s")
+        self.forward_button.clicked.connect(lambda: self.seek_relative(5))
+        
+        seek_layout.addWidget(self.rewind_button)
+        seek_layout.addWidget(self.forward_button)
+        
+        # Add seek layout after play button
+        player_layout.addLayout(seek_layout)
+        
         # Añadir el panel de controles al layout principal
         layout.addWidget(player_controls)
 
         # Añadir el layout de velocidad al layout de controles
         layout.addLayout(speed_layout)
+
+    def add_UI_SimpleTagSection(self, layout):
+        tag_section = QWidget()
+        tag_layout = QVBoxLayout(tag_section)
+
+        # Categorías iniciales
+        self.categories = ["Ataque", "Transición", "ABP", "Presión", "Defensa", "Ocasión", "Otros"]
+        self.category_buttons = {}
+        for category in self.categories:
+            btn = QPushButton(category)
+            btn.setMinimumHeight(40)
+            btn.setStyleSheet("font-size: 16px;")
+            btn.clicked.connect(lambda _, c=category: self.handle_tag_click(c))
+            tag_layout.addWidget(btn)
+            self.category_buttons[category] = btn
+
+        # Controles para segundos antes/después
+        self.pre_spin = QSpinBox()
+        self.pre_spin.setRange(0, 10)
+        self.pre_spin.setValue(1)
+        self.pre_spin.setPrefix("Inicio -")
+        tag_layout.addWidget(self.pre_spin)
+
+        self.post_spin = QSpinBox()
+        self.post_spin.setRange(0, 10)
+        self.post_spin.setValue(1)
+        self.post_spin.setPrefix("Fin +")
+        tag_layout.addWidget(self.post_spin)
+
+        layout.addWidget(tag_section)
 
     ## Método para añadir la sección de tags al layout de controles
     ## Se encarga de crear la sección de tags en la UI
@@ -179,6 +239,29 @@ class VideoTaggerApp(QWidget):
         layout.addWidget(tag_section)
 
 
+    def handle_tag_click(self, category):
+        current_time = self.video_player.get_time()
+
+        if category not in self.pending_tag_starts:
+            # Primera vez: marcar inicio (ajustado hacia atrás)
+            adjusted_start = max(0, current_time - self.pre_spin.value())
+            self.pending_tag_starts[category] = adjusted_start
+            self.logger.info(f"{category}: inicio marcado en {adjusted_start:.2f}s")
+        else:
+            # Segunda vez: marcar fin (ajustado hacia adelante)
+            adjusted_end = current_time + self.post_spin.value()
+            start_time = self.pending_tag_starts.pop(category)
+            self.tag_manager.add_start(start_time, category)
+            self.tag_manager.add_end(adjusted_end)
+            # self.tag_manager.get_tags().append({
+            #     "start": start_time,
+            #     "end": adjusted_end,
+            #     "category": category
+            # })
+            self.logger.info(f"{category}: fin marcado en {adjusted_end:.2f}s — Tag guardado")
+            self.update_tag_list()
+
+
     def _create_menu_bar(self):
 
         menubar = QMenuBar(self)
@@ -217,22 +300,21 @@ class VideoTaggerApp(QWidget):
     def seek_to_tag(self, time_seconds):
         self.video_player.set_time(time_seconds)
         self.video_player.mediaplayer.play()
-        print(f"🎯 Saltando a tag en {time_seconds:.2f}s")
+        self.logger.info(f"🎯 Saltando a tag en {time_seconds:.2f}s")
 
+    def seek_relative(self, seconds):
+        """
+        Seek forward or backward relative to current position
+        seconds: int - positive for forward, negative for backward
+        """
+        current_time = self.video_player.get_time()
+        new_time = max(0, current_time + seconds)
+        total_time = self.video_player.mediaplayer.get_length() / 1000.0
+        new_time = min(new_time, total_time)
+        
+        self.video_player.set_time(new_time)
+        self.logger.info(f"Seeking {'forward' if seconds > 0 else 'backward'} {abs(seconds)}s to {new_time:.2f}s")
 
-    # Cargar video desde el disco
-    def load_video(self):
-        file_path, _ = QFileDialog.getOpenFileName(self, "Seleccionar Video")
-        if file_path:
-            self.video_path = file_path
-            self.video_player.load_video(file_path)
-
-    ## Reproducir / Pausar el video
-    def toggle_playback(self):
-        if self.video_player.mediaplayer.is_playing():
-            self.video_player.mediaplayer.pause()
-        else:
-            self.video_player.mediaplayer.play()
 
     # Marcar el inicio y fin de un tag
     def mark_start(self):
@@ -256,6 +338,7 @@ class VideoTaggerApp(QWidget):
             self.tag_manager.get_tags()[-1]["end"] = current_time
             self.update_tag_list()
             print(f"[TAG] Fin en {current_time:.2f}s")
+            self.logger.info(f"[TAG] Fin en {current_time:.2f}s")
             self.timeline.update()
             self.tag_manager.add_end(current_time)
 
