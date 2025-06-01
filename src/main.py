@@ -1,6 +1,11 @@
 import sys
 import os
-import pythoncom  # Add this import
+
+# Add conditional import for Windows
+if os.name == 'nt':  # Only on Windows
+    import pythoncom
+    pythoncom.CoInitialize() # Initialize COM for PyQt5
+
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
 
 from PyQt5.QtWidgets import QApplication
@@ -13,10 +18,7 @@ from src.ui.main_window import VideoTaggerApp
 ### Main function to run the application
 # It initializes the QApplication, sets the style, creates an instance of VideoTaggerApp, and starts the event loop.
 if __name__ == "__main__":
-
-    # Initialize COM for PyQt5
-    pythoncom.CoInitialize()  # Initialize COM for PyQt5
-
+    
     app = QApplication(sys.argv) # Inicializa la aplicación
 
     # Apply dark theme

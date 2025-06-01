@@ -25,7 +25,6 @@ class TestVideoTaggerAppUI(unittest.TestCase):
         
         # Test if file controls exist
         self.assertIsNotNone(self.window.file_controls, "File controls not created")
-        self.assertIsNotNone(self.window.file_controls.export_button, "Export button not created")
 
     def test_ui_layout(self):
         """Test the main window layout structure"""

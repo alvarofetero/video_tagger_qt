@@ -61,7 +61,7 @@ class TagControls(QWidget, UIComponent):
         """Create a single category button with proper setup"""
         btn = QPushButton(f"{index+1}. {category}")
         btn.setMinimumHeight(40)
-        btn.setStyleSheet("font-size: 16px;")
+        btn.setStyleSheet("font-size: 14px;")
         btn.clicked.connect(self.on_category_button_clicked)
         btn.setProperty("category", category)
         btn.setProperty("index", index+1)
@@ -111,12 +111,6 @@ class TagControls(QWidget, UIComponent):
 
         # Add the grid layout to tag_layout
         self.tag_layout.addLayout(button_grid)
-
-        # Re-add the tag list section
-        self.tag_list = QListWidget()
-        self.tag_layout.addWidget(QLabel("📝 Tags creados:"))
-        self.apply_format_to_taglist(self.tag_list)
-        self.tag_layout.addWidget(self.tag_list)
 
     def update_category_buttons(self):
         """Update the category buttons after category list changes"""

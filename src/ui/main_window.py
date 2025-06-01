@@ -65,13 +65,12 @@ class VideoTaggerApp(QMainWindow):
         # Save tags action
         save_action = QAction(self.style().standardIcon(QStyle.SP_CommandLink), 'Guardar Tags', self)
         save_action.setShortcut('Ctrl+S')
-        #save_action.triggered.connect(self.save_tags)
-        #save_action.triggered.connect(self.file_controls.save_tags)
+        save_action.triggered.connect(self.file_controls.save_tags)
         archivo_menu.addAction(save_action)
 
-
+        # Load tags action
         load_action = QAction('Cargar Tags', self)
-        #load_action.triggered.connect(self.file_controls.load_tags) 
+        load_action.triggered.connect(self.file_controls.load_tags)
         archivo_menu.addAction(load_action)
         export_action = QAction(self.style().standardIcon(QStyle.SP_DialogSaveButton),'Exportar Clip', self)
         export_action.triggered.connect(self.file_controls.export_clips)

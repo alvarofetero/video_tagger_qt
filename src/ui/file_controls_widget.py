@@ -26,6 +26,18 @@ class FileControls(UIComponent):
         self.export_button.clicked.connect(self.export_clips)
         file_layout.addWidget(self.export_button)
 
+        # Tag Management buttons
+        tag_controls = QHBoxLayout()
+        self.save_button = QPushButton("💾 Save Tags")
+        self.save_button.clicked.connect(self.save_tags)
+        tag_controls.addWidget(self.save_button)
+
+        self.load_button = QPushButton("📂 Load Tags")
+        self.load_button.clicked.connect(self.load_tags)
+        tag_controls.addWidget(self.load_button)
+
+        file_layout.addLayout(tag_controls)
+
         # Progress section with better layout
         progress_group = QGroupBox("Export Progress")
         progress_layout = QVBoxLayout(progress_group)
@@ -118,8 +130,6 @@ class FileControls(UIComponent):
             self.clip_percentage.setVisible(True)
             self.progress_percentage.setVisible(True)
             
-            self.export_button.setEnabled(False)
-            
             # Clear any existing threads
             self.export_threads.clear()
             
@@ -176,6 +186,7 @@ class FileControls(UIComponent):
         self.progress_percentage.setText("0%")
         
         self.clip_progress_bar.setVisible(False)
+        
         self.clip_progress_bar.setValue(0)
         self.clip_percentage.setText("0%")
         self.clip_name_label.setText("")
@@ -184,8 +195,6 @@ class FileControls(UIComponent):
         self.current_clip_label.setVisible(False)
         self.clip_name_label.setVisible(False)
         self.status_label.setVisible(False)
-        
-        self.export_button.setEnabled(True)
         
         QMessageBox.information(
             self.parent,
@@ -197,5 +206,62 @@ class FileControls(UIComponent):
     def set_tags(self, tags):
         """Update the tags list"""
         self.tags = tags
-        self.export_button.setEnabled(bool(tags))
 
+    def save_tags(self):
+        """Save current tags to a JSON file"""
+        if not self.tags:
+            QMessageBox.information(self.parent, "Info", "No tags to save.")
+            return
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self.parent,
+            "Save Tags",
+            "",
+            "JSON Files (*.json)"
+        )
+        
+        if file_path:
+            try:
+                import json
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(self.tags, f, indent=2, ensure_ascii=False)
+                self.logger.info(f"Tags saved successfully to {file_path}")
+                QMessageBox.information(self.parent, "Success", "Tags saved successfully.")
+            except Exception as e:
+                self.logger.error(f"Error saving tags: {e}")
+                QMessageBox.warning(self.parent, "Error", f"Failed to save tags: {str(e)}")
+
+    def load_tags(self):
+        """Load tags from a JSON file"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self.parent,
+            "Load Tags",
+            "",
+            "JSON Files (*.json)"
+        )
+        
+        if file_path:
+            try:
+                import json
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    loaded_tags = json.load(f)
+                self.tags = loaded_tags
+                
+                # Update tag manager's tags directly
+                if hasattr(self.parent, 'tag_manager'):
+                    self.parent.tag_manager.tags = loaded_tags
+                
+                # Update the UI tag list
+                if hasattr(self.parent, 'tag_controls'):
+                    self.parent.tag_controls.update_tag_list(loaded_tags)
+                    self.parent.tag_controls.active_category = None  # Reset active category
+                    
+                # Update timeline if it exists
+                if hasattr(self.parent, 'timeline'):
+                    self.parent.timeline.update()
+                
+                self.logger.info(f"Tags loaded successfully from {file_path}")
+                QMessageBox.information(self.parent, "Success", "Tags loaded successfully.")
+            except Exception as e:
+                self.logger.error(f"Error loading tags: {e}")
+                QMessageBox.warning(self.parent, "Error", f"Failed to load tags: {str(e)}")
