@@ -3,3 +3,4 @@ tests/__pycache__/*
 logs/*
 src/ui/__pycache__/*
 src/utils/__pycache__/*
+tests/utils/__pycache__/*
