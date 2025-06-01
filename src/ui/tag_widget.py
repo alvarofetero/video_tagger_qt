@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QKeySequence
 from .base_component import UIComponent
-from src.config import load_categories
+from src.config import load_categories, get_tag_duration_config
 
 class TagControls(QWidget, UIComponent):
     tag_started = pyqtSignal(str, float) # Emits (category, start_time)
@@ -18,18 +18,22 @@ class TagControls(QWidget, UIComponent):
        
         self.active_category = None
         self.video_player = None
+
         # Load categories from json file instead of hardcoding
         self.categories = load_categories()
         self.category_buttons = {}
 
+        # Initialize time adjustment values from config
+        pre_duration, post_duration = get_tag_duration_config()
+
         # Initialize time adjustment values (not shown in UI)
         self.pre_spin = QSpinBox()
         self.pre_spin.setRange(0, 10)
-        self.pre_spin.setValue(1)
+        self.pre_spin.setValue(pre_duration)
         
         self.post_spin = QSpinBox()
         self.post_spin.setRange(0, 10)
-        self.post_spin.setValue(1)
+        self.post_spin.setValue(post_duration)
 
     def set_video_player(self, video_player):
         self.video_player = video_player
@@ -162,7 +166,7 @@ class TagControls(QWidget, UIComponent):
                 start_time = f"{tag['start']:.1f}"
                 end_time = f"{tag['end']:.1f}" if tag["end"] is not None else "..."
                 category = tag["category"]
-                self.tag_list.addItem(f"{i+1}. {category} ({start_time}s - {end_time}s)")
+                self.tag_list.addItem(f"{i+1:03d}. {category} ({start_time}s - {end_time}s)")
 
     def clear_tags(self):
         """Clear the tag list and reset active category"""
