@@ -2,6 +2,7 @@ import pytest
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence
 from src.ui.tag_widget import TagControls
+from tests.utils.mock_objects import MockVideoPlayer
 
 def test_tag_controls_init(qtbot):
     """Test that tag controls initialize correctly"""
@@ -43,10 +44,7 @@ def test_keyboard_shortcuts(qtbot, qapp):
     layout = QVBoxLayout(container)
     controls.setup_ui(layout)
     
-    # Mock video player
-    class MockVideoPlayer:
-        def get_time(self):
-            return 10.0  # Mock 10 seconds
+    # Set up mock video player
     controls.video_player = MockVideoPlayer()
     
     # Track signals
@@ -80,10 +78,7 @@ def test_tag_creation_flow(qtbot):
     layout = QVBoxLayout()
     controls.setup_ui(layout)
     
-    # Mock video player
-    class MockVideoPlayer:
-        def get_time(self):
-            return 10.0  # Mock 10 seconds
+    # Set up mock video player
     controls.video_player = MockVideoPlayer()
     
     # Track signals

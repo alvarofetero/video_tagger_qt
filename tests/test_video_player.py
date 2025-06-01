@@ -1,6 +1,7 @@
 import pytest
 from PyQt5.QtCore import Qt
 from src.player import VideoPlayer
+from tests.utils.vlc_mock import MockMediaPlayer
 
 def test_video_player_init(qtbot):
     """Test that video player initializes correctly"""
@@ -40,11 +41,12 @@ def test_video_player_time_signal(qtbot):
     time_signals = []
     player.time_changed.connect(lambda t: time_signals.append(t))
     
-    # Mock the mediaplayer methods
-    player.mediaplayer.is_playing = lambda: True
-    player.mediaplayer.get_time = lambda: 5000  # 5 seconds in milliseconds
+    # Override the mediaplayer with a mock instance
+    player.mediaplayer = MockMediaPlayer()
+    player.mediaplayer._playing = True  # Set mock to playing state
+    player.mediaplayer._time = 5000  # Set mock time to 5 seconds
     
-    # Trigger the timer manually
+    # Trigger the timer manually 
     player.update_time()
     
     # Verify signal was emitted with correct time

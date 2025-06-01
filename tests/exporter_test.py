@@ -1,4 +1,5 @@
 import os
+import tempfile
 import unittest
 import subprocess
 from unittest.mock import patch, MagicMock
@@ -12,8 +13,8 @@ class TestExporterThread(unittest.TestCase):
             {"start": 0.0, "end": 10.0, "category": "Test1"},
             {"start": 10.0, "end": 20.0, "category": "Test2"}
         ]
-        self.video_path = "test_video.mp4"
-        self.output_dir = "output"
+        self.video_path = os.path.join(tempfile.gettempdir(), "test_video.mp4")
+        self.output_dir = os.path.join(tempfile.gettempdir(), "test_output")
         self.filename_base = "clip"
         self.exporter = ExporterThread(self.tags, self.video_path, self.output_dir, self.filename_base)
 
@@ -68,10 +69,17 @@ class TestExporterThread(unittest.TestCase):
         self.assertEqual(progress_values[-1], 100)  # Final progress should be 100%
 
     def tearDown(self):
-        # Clean up the output directory
-        for file in os.listdir(self.output_dir):
-            os.remove(os.path.join(self.output_dir, file))
-        os.rmdir(self.output_dir)
+        # Clean up the output directory if it exists
+        if os.path.exists(self.output_dir):
+            for file in os.listdir(self.output_dir):
+                try:
+                    os.remove(os.path.join(self.output_dir, file))
+                except (OSError, PermissionError):
+                    pass
+            try:
+                os.rmdir(self.output_dir)
+            except (OSError, PermissionError):
+                pass  # Ignore errors during cleanup
 
 if __name__ == "__main__":
     unittest.main()

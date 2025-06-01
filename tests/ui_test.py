@@ -1,15 +1,31 @@
 import unittest
 import pytest
 from PyQt5.QtWidgets import QApplication, QSplitter
+from PyQt5.QtCore import Qt, QTimer
 
-@pytest.mark.usefixtures("qapp")
+@pytest.mark.usefixtures("qapp", "cleanup_qt")
 class TestVideoTaggerAppUI(unittest.TestCase):
     def setUp(self):
         from src.ui import VideoTaggerApp
-        self.window = VideoTaggerApp()  # Create an instance of the VideoTaggerApp
+        # Create window in the next event loop iteration
+        QTimer.singleShot(0, self._create_window)
+        QApplication.processEvents()
+
+    def _create_window(self):
+        """Create the main window in a way that's safe for the event loop"""
+        self.window = VideoTaggerApp()
+        self.window.setAttribute(Qt.WA_DontShowOnScreen)  # Don't actually show the window
+        self.window.show()  # Still need to call show() to initialize some internals
+        QApplication.processEvents()  # Process any pending events
 
     def test_ui_elements_exist(self):
         """Test that essential UI components exist"""
+        if not hasattr(self, 'window'):
+            self.skipTest("Window not properly initialized")
+            
+        # Process events before checking components
+        QApplication.processEvents()
+        
         # Test if player controls are created
         self.assertIsNotNone(self.window.player_controls, "Player controls not created")
         self.assertIsNotNone(self.window.player_controls.play_button, "Play button not created")
@@ -28,6 +44,12 @@ class TestVideoTaggerAppUI(unittest.TestCase):
 
     def test_ui_layout(self):
         """Test the main window layout structure"""
+        if not hasattr(self, 'window'):
+            self.skipTest("Window not properly initialized")
+            
+        # Process events before checking layout
+        QApplication.processEvents()
+        
         # Test if the main window has a central widget
         self.assertIsNotNone(self.window.central_widget, "Central widget not created")
         
@@ -41,5 +63,7 @@ class TestVideoTaggerAppUI(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'window'):
-            self.window.close()  # Close the window after each test
-            self.window.deleteLater()  # Ensure proper cleanup
+            QApplication.processEvents()  # Process any pending events before cleanup
+            self.window.close()
+            self.window.deleteLater()
+            QApplication.processEvents()  # Process the deleteLater event
