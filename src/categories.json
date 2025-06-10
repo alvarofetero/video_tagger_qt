@@ -1,10 +1,12 @@
 [
     "Nico",
-    "Portero",   
-    "Defensa",
+    "Gol",
+    "Portero",
+    "Jugada destacada",
     "Salida de balón",
     "Recuperación",
-    "Gol",
-    "Presión tras pérdida",
-    "ABP"
+    "Defensa",
+    "Presión t/pérdida",
+    "ABP",
+    "Ataque posicional"
 ]

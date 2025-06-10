@@ -11,17 +11,18 @@ logger = AppLogger.get_logger()
 DEFAULT_CONFIG = {
     "categories": [
         "Nico",
-        "Portero",   
-        "Defensa",
+        "Gol",
+        "Portero",
         "Salida de balón",
         "Recuperación",
-        "Gol",
+        "Defensa",
         "Presión tras pérdida",
-        "ABP"
+        "ABP",
+        "Ataque posicional"
     ],
     "tag_duration": {
-        "pre_tag": 1,
-        "post_tag": 1
+        "pre_tag": 3,
+        "post_tag": 2
     }
 }
 

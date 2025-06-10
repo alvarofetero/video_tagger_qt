@@ -1,16 +1,17 @@
 {
     "categories": [
         "Nico",
+        "Gol",
         "Portero",
-        "Defensa",
         "Salida de balón",
         "Recuperación",
-        "Gol",
+        "Defensa",
         "Presión tras pérdida",
-        "ABP"
+        "ABP",
+        "Ataque posicional"
     ],
     "tag_duration": {
-        "pre_tag": 2,
+        "pre_tag": 5,
         "post_tag": 2
     }
 }
