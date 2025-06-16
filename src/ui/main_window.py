@@ -5,15 +5,19 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 
-from src.ui.base_component import UIComponent
-from src.player import VideoPlayer
+# from src.ui.base_component import UIComponent
+
 from src.ui.video_player_controls_widget import PlayerControls
 from src.ui.tag_widget import TagControls
 from src.ui.file_controls_widget import FileControls
+from src.ui.drawing_controls_widget import DrawingControls
+
+from src.player import VideoPlayer
 from src.utils.logger import AppLogger
 from src.tag_manager import TagManager
 
 ## Main application window for Video Tagger
+## This class initializes the main window, sets up the UI components, and manages the application flow.
 class VideoTaggerApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -35,12 +39,14 @@ class VideoTaggerApp(QMainWindow):
         # Initialize components
         self.player_controls = PlayerControls(self)
         self.tag_controls = TagControls(self)
+        self.drawing_controls = DrawingControls(self)
         
          # Pass video_player to FileControls
         self.file_controls = FileControls(self, video_player=self.video_player, tags=self.tag_manager.get_tags())
 
         self.player_controls.set_video_player(self.video_player)  # Set the video player
         self.tag_controls.set_video_player(self.video_player)
+        self.video_player.set_drawing_controls(self.drawing_controls)
 
         
         self.setup_ui()
@@ -105,11 +111,15 @@ class VideoTaggerApp(QMainWindow):
         # Left panel
         controls_panel = QWidget()
         control_layout = QVBoxLayout(controls_panel)
+
+        self.addToolBar(Qt.TopToolBarArea, self.drawing_controls)
+        self.drawing_controls.setAllowedAreas(Qt.AllToolBarAreas)
         
         # Add components
         self.player_controls.setup_ui(control_layout) ## call setup_ui on player_controls
         self.tag_controls.setup_ui(control_layout)  ## call setup_ui on tag_controls
         self.file_controls.setup_ui(control_layout) ## call setup_ui on file_controls
+        # self.drawing_controls.setup_ui()
         
         # self.file_controls.set_video_player(self.video_player)
         # self.tag_controls.set_video_player(self.video_player)
@@ -117,7 +127,7 @@ class VideoTaggerApp(QMainWindow):
         
         splitter.addWidget(controls_panel)
         splitter.addWidget(self.video_player)
-        splitter.setSizes([300, 700])
+        splitter.setSizes([200, 800])
 
         # Main layout
         main_layout.addWidget(splitter)
