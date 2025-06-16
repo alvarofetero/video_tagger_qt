@@ -7,6 +7,9 @@ from PyQt5.QtGui import QKeySequence
 from .base_component import UIComponent
 from src.config import load_categories, get_tag_duration_config
 
+# class: TagControls
+# description: This class manages the tag controls for the video player, allowing users to create, end, and remove tags.
+# It provides a UI for selecting categories, starting and ending tags, and displaying the list of created tags.
 class TagControls(QWidget, UIComponent):
     tag_started = pyqtSignal(str, float) # Emits (category, start_time)
     tag_ended = pyqtSignal(str, float)   # Emits (category, end_time)
@@ -53,7 +56,7 @@ class TagControls(QWidget, UIComponent):
 
         ## Lista de tags
         self.tag_list = QListWidget()
-        self.tag_layout.addWidget(QLabel("📝 Tags creados:"))
+        self.tag_layout.addWidget(QLabel("📝 Created Tags:"))
         self.apply_format_to_taglist(self.tag_list)
         self.tag_layout.addWidget(self.tag_list)
 
