@@ -2,6 +2,9 @@ import logging
 from datetime import datetime
 import os
 
+# Class: Logger
+# Description: A simple logger class that logs messages to both console and file.
+# It supports different log levels and creates a log file with a timestamp.
 class Logger:
     def __init__(self, name="VideoTagger", log_to_file=True):
         self.logger = logging.getLogger(name)
