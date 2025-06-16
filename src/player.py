@@ -4,6 +4,10 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSizePolicy
 from PyQt5.QtCore import QTimer, pyqtSignal
 from src.utils.logger import AppLogger
 
+# Class: VideoPlayer
+# Description: A video player widget that uses VLC for playback.
+# It supports loading videos, playback control, speed adjustment, and time tracking.
+# Dependencies: PyQt5, VLC (or mock for testing)
 class VideoPlayer(QWidget):
     time_changed = pyqtSignal(float)  # Signal for current video time
     speed_changed = pyqtSignal(float)  # Signal for speed changes
@@ -36,11 +40,52 @@ class VideoPlayer(QWidget):
         self.video_frame = QWidget(self)
         self.video_frame.setStyleSheet("background-color: black;")
         self.video_frame.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.video_frame.setMouseTracking(True)
+        self.drawing_controls = None
+        self.annotations = []
 
         layout = QVBoxLayout()
         layout.addWidget(self.video_frame)
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
+
+    def set_drawing_controls(self, drawing_controls):
+        """Set the drawing controls instance"""
+        self.drawing_controls = drawing_controls
+
+    def paintEvent(self, event):
+        """Handle paint events"""
+        from PyQt5.QtGui import QPainter, QPen, QBrush
+        from PyQt5.QtCore import Qt
+        painter = QPainter(self)
+        for annotation in self.annotations:
+            if annotation["tool"] == "circle":
+                painter.setPen(QPen(annotation["color"], annotation["size"], Qt.SolidLine))
+                painter.setBrush(QBrush(annotation["color"], Qt.SolidPattern))
+                painter.drawEllipse(annotation["position"], annotation["size"], annotation["size"])
+        painter.end()
+
+    def set_drawing_controls(self, drawing_controls):
+        """Set the drawing controls instance"""
+        self.drawing_controls = drawing_controls
+
+    def mousePressEvent(self, event):
+        """Handle mouse press events"""
+        if self.drawing_controls:
+            if self.drawing_controls.selected_tool == "circle":
+                from PyQt5.QtGui import QPainter, QPen, QBrush
+                from PyQt5.QtCore import Qt
+                annotation = {
+                    "tool": "circle",
+                    "position": event.pos(),
+                    "color": self.drawing_controls.selected_color,
+                    "size": self.drawing_controls.drawing_size
+                }
+                self.annotations.append(annotation)
+                self.update() # Trigger paintEvent
+            print(f"Drawing tool: {self.drawing_controls.selected_tool}")
+            print(f"Drawing color: {self.drawing_controls.selected_color.name()}")
+            print(f"Drawing size: {self.drawing_controls.drawing_size}")
 
     def setup_timer(self):
         """Setup update timer"""
@@ -61,6 +106,27 @@ class VideoPlayer(QWidget):
             
         media = self.instance.media_new(path)
         self.mediaplayer.set_media(media)
+        
+        # # parse the metadata of the file
+        # self.media.parse()
+        # # set the title of the track as window title
+                
+        # Extract video metadata
+        media.parse_with_options(0, 2000)  # Parse metadata
+        file_name = os.path.basename(path)
+        # fps = media.get_fps()
+        # width, height = media.get_tracks()[0].video.width, media.get_tracks()[0].video.height
+
+        # Display metadata in the UI
+        # self.logger.info(f"Loaded video: {file_name}, FPS: {fps}, Resolution: {width}x{height}")
+        # self.setWindowTitle(f"{file_name} - {fps:.2f} FPS, {width}x{height}")
+        media.parse()
+        
+        self.logger.info(f"Loaded video: {media.get_meta(0)}")
+        self.logger.info(f"Video duration: {media.get_duration() / 1000.0:.2f} seconds")
+        self.logger.info(f"Video tracks: {media.get_meta(1)}")  # 1 is for video track
+        self.setWindowTitle(media.get_meta(0))
+
         
         # Set render window based on platform
         if sys.platform.startswith('linux'):
@@ -109,4 +175,3 @@ class VideoPlayer(QWidget):
         
         self.set_time(new_time)
         self.logger.info(f"Seeking {'forward' if seconds > 0 else 'backward'} {abs(seconds)}s to {new_time:.2f}s")
-
