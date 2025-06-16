@@ -16,16 +16,10 @@ class FileControls(UIComponent):
         self.logger = AppLogger.get_logger()
         self.export_threads = []
 
-    def setup_ui(self, layout):
-        # Create main group box for file controls
-        file_group = QGroupBox("Export Controls")
-        file_layout = QVBoxLayout(file_group)
-
-        # Export button
-        self.export_button = QPushButton("📤 Export Clips")
-        self.export_button.clicked.connect(self.export_clips)
-        file_layout.addWidget(self.export_button)
-
+    def set_tags_controls(self, layout):
+        tag_group = QGroupBox("Tag Management")
+        tag_layout = QVBoxLayout(tag_group)
+        
         # Tag Management buttons
         tag_controls = QHBoxLayout()
         self.save_button = QPushButton("💾 Save Tags")
@@ -35,9 +29,25 @@ class FileControls(UIComponent):
         self.load_button = QPushButton("📂 Load Tags")
         self.load_button.clicked.connect(self.load_tags)
         tag_controls.addWidget(self.load_button)
+        
+        self.clear_button = QPushButton("🗑️ Clear Tags")
+        self.clear_button.clicked.connect(self.clear_tags)
+        tag_controls.addWidget(self.clear_button)
 
-        file_layout.addLayout(tag_controls)
 
+        tag_layout.addLayout(tag_controls)
+
+
+    def setup_ui(self, layout):
+        # Create main group box for file controls
+        file_group = QGroupBox("Export Controls")
+        file_layout = QVBoxLayout(file_group)
+
+        # Export button
+        # self.export_button = QPushButton("📤 Export Clips")
+        # self.export_button.clicked.connect(self.export_clips)
+        # file_layout.addWidget(self.export_button)
+        
         # Progress section with better layout
         progress_group = QGroupBox("Export Progress")
         progress_layout = QVBoxLayout(progress_group)
