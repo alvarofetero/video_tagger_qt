@@ -24,7 +24,7 @@ class ExporterThread(QThread):
             if tag["end"]:
                 start_time = tag["start"]
                 end_time = tag["end"]
-                output_filename = f"{i+1:03d}_{tag['category']}_{i+1}.mp4"
+                output_filename = f"{i+1:03d}_{tag['category']}_{i+1}_{int(start_time // 60):02d}m.mp4"
                 output_path = os.path.join(self.output_dir, output_filename)
 
                 # Log the current clip being processed
