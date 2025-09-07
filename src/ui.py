@@ -240,6 +240,7 @@ class VideoTaggerApp(QWidget):
 
 
     def handle_tag_click(self, category):
+        self.logger.debug(f"[ui.py](line 243) handle_tag_click called with category: {category} ")
         current_time = self.video_player.get_time()
 
         if category not in self.pending_tag_starts:
@@ -318,6 +319,7 @@ class VideoTaggerApp(QWidget):
 
     # Marcar el inicio y fin de un tag
     def mark_start(self):
+        self.logger.debug(f"[ui.py](line 322) mark_start called without category")
         if self.video_path:
             category = self.category_box.currentText()
             if not category:
