@@ -15,6 +15,7 @@ from src.ui.drawing_controls_widget import DrawingControls
 from src.player import VideoPlayer
 from src.utils.logger import AppLogger
 from src.tag_manager import TagManager
+from src.ui.main_window_helpers import setup_menu as build_menu, edit_categories as helper_edit_categories, edit_time_settings as helper_edit_time_settings
 
 ## Main application window for Video Tagger
 ## This class initializes the main window, sets up the UI components, and manages the application flow.
@@ -50,56 +51,11 @@ class VideoTaggerApp(QMainWindow):
 
         
         self.setup_ui()
-        self.setup_menu()
+        # build_menu extracted to helpers
+        build_menu(self)
         self.setup_connections()
-
-    def setup_menu(self):
-        """Setup the application menu bar"""
-        menubar = self.menuBar()
         
-        # Archivo menu
-        archivo_menu = menubar.addMenu('Archivo')
-        
-        #Open video action
-        open_action = QAction(self.style().standardIcon(QStyle.SP_DialogOpenButton), 'Abrir Video', self)
-        open_action.setShortcut('Ctrl+O')
-        open_action.triggered.connect(self.file_controls.load_video) # Connect to load_video method
-        archivo_menu.addAction(open_action)
-        
-        archivo_menu.addSeparator()
-
-        # Save tags action
-        save_action = QAction(self.style().standardIcon(QStyle.SP_CommandLink), 'Guardar Tags', self)
-        save_action.setShortcut('Ctrl+S')
-        save_action.triggered.connect(self.file_controls.save_tags)
-        archivo_menu.addAction(save_action)
-
-        # Load tags action
-        load_action = QAction('Cargar Tags', self)
-        load_action.triggered.connect(self.file_controls.load_tags)
-        archivo_menu.addAction(load_action)
-        export_action = QAction(self.style().standardIcon(QStyle.SP_DialogSaveButton),'Exportar Clip', self)
-        export_action.triggered.connect(self.file_controls.export_clips)
-        archivo_menu.addAction(export_action)
-        archivo_menu.addSeparator()
-
-        
-        # Configuración menu
-        config_menu = menubar.addMenu('Configuración')
-        categories_action = QAction('Categorías', self)
-        categories_action.triggered.connect(self.edit_categories)
-        config_menu.addAction(categories_action)
-
-        time_settings_action = QAction('Ajustes de Tiempo', self)
-        time_settings_action.triggered.connect(self.edit_time_settings)
-        config_menu.addAction(time_settings_action)
-        
-        # Salir action
-        salir_action = QAction('Salir', self)
-        salir_action.triggered.connect(self.close)
-        archivo_menu.addSeparator()
-        archivo_menu.addAction(salir_action)
-
+    # menu building moved to src/ui/main_window_helpers.py
 
     def setup_ui(self):
          # Main layout for central widget
@@ -167,58 +123,8 @@ class VideoTaggerApp(QMainWindow):
         self.logger.info(f"[VideoTaggerApp] Ended tag for {category} at {end_time:.2f}s")
 
     def edit_categories(self):
-        """Open a dialog to edit tag categories"""
-        dialog = QDialog(self)
-        dialog.setWindowTitle("Edit Categories")
-        layout = QVBoxLayout(dialog)
-
-        # Create list widget for categories
-        category_list = QListWidget()
-        category_list.addItems(self.tag_controls.categories)
-        layout.addWidget(category_list)
-
-        # Add category button
-        add_button = QPushButton("Add Category")
-        def add_category():
-            text, ok = QInputDialog.getText(dialog, "Add Category", "Category name:")
-            if ok and text:
-                if text not in self.tag_controls.categories:
-                    self.tag_controls.categories.append(text)
-                    category_list.addItem(text)
-                    self.tag_controls.update_category_buttons()  # Update UI immediately
-                    # Save changes to categories.json
-                    self._save_categories_to_file()
-                else:
-                    QMessageBox.warning(dialog, "Warning", "Category already exists!")
-
-        add_button.clicked.connect(add_category)
-        layout.addWidget(add_button)
-
-        # Remove category button
-        remove_button = QPushButton("Remove Category")
-        def remove_category():
-            current = category_list.currentItem()
-            if current:
-                idx = category_list.row(current)
-                category = self.tag_controls.categories[idx]
-                # Don't remove if category is active
-                if category == self.tag_controls.active_category:
-                    QMessageBox.warning(dialog, "Warning", "Cannot remove an active category")
-                    return
-                self.tag_controls.categories.remove(category)
-                category_list.takeItem(idx)
-                self.tag_controls.update_category_buttons()  # Update UI immediately
-                # Save changes to categories.json
-                self._save_categories_to_file()
-
-        remove_button.clicked.connect(remove_category)
-        layout.addWidget(remove_button)
-
-        # Show dialog
-        dialog.exec_()
-        
-        # Update tag controls after dialog closes
-        self.tag_controls.update_category_buttons()
+        """Wrapper that delegates to common helper (keeps call sites intact)."""
+        helper_edit_categories(self)
 
     def _save_categories_to_file(self):
         """Save current categories back to the JSON file"""
@@ -232,47 +138,7 @@ class VideoTaggerApp(QMainWindow):
         except Exception as e:
             self.logger.error(f"Error saving categories: {e}")
             QMessageBox.warning(self, "Error", "Failed to save categories to file.")
-
+  
     def edit_time_settings(self):
-        """Open a dialog to edit time adjustment settings"""
-        dialog = QDialog(self)
-        dialog.setWindowTitle("Time Adjustment Settings")
-        layout = QVBoxLayout(dialog)
-
-        # Create spinboxes for time adjustments
-        pre_layout = QHBoxLayout()
-        pre_label = QLabel("Pre-tag duration (seconds):")
-        pre_spin = QSpinBox()
-        pre_spin.setRange(0, 10)
-        pre_spin.setValue(self.tag_controls.pre_spin.value())
-        pre_layout.addWidget(pre_label)
-        pre_layout.addWidget(pre_spin)
-        layout.addLayout(pre_layout)
-
-        post_layout = QHBoxLayout()
-        post_label = QLabel("Post-tag duration (seconds):")
-        post_spin = QSpinBox()
-        post_spin.setRange(0, 10)
-        post_spin.setValue(self.tag_controls.post_spin.value())
-        post_layout.addWidget(post_label)
-        post_layout.addWidget(post_spin)
-        layout.addLayout(post_layout)
-
-        # OK/Cancel buttons
-        button_box = QHBoxLayout()
-        ok_button = QPushButton("OK")
-        cancel_button = QPushButton("Cancel")
-        
-        def on_accept():
-            self.tag_controls.pre_spin.setValue(pre_spin.value())
-            self.tag_controls.post_spin.setValue(post_spin.value())
-            dialog.accept()
-            
-        ok_button.clicked.connect(on_accept)
-        cancel_button.clicked.connect(dialog.reject)
-        
-        button_box.addWidget(ok_button)
-        button_box.addWidget(cancel_button)
-        layout.addLayout(button_box)
-
-        dialog.exec_()
+        """Wrapper that delegates to common helper (keeps call sites intact)."""
+        helper_edit_time_settings(self)
