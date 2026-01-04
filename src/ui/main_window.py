@@ -11,11 +11,12 @@ from src.ui.video_player_controls_widget import PlayerControls
 from src.ui.tag_widget import TagControls
 from src.ui.file_controls_widget import FileControls
 from src.ui.drawing_controls_widget import DrawingControls
+from src.ui.category_manager import CategoryManager
+from src.ui.main_window_helpers import MainWindowHelpers
 
 from src.player import VideoPlayer
 from src.utils.logger import AppLogger
 from src.tag_manager import TagManager
-from src.ui.main_window_helpers import setup_menu as build_menu, edit_categories as helper_edit_categories, edit_time_settings as helper_edit_time_settings
 
 ## Main application window for Video Tagger
 ## This class initializes the main window, sets up the UI components, and manages the application flow.
@@ -42,8 +43,16 @@ class VideoTaggerApp(QMainWindow):
         self.tag_controls = TagControls(self)
         self.drawing_controls = DrawingControls(self)
         
+        # Category manager and helpers
+        self.category_manager = CategoryManager()                     # << new
+        self.helpers = MainWindowHelpers(self, self.category_manager) # << new
+
          # Pass video_player to FileControls
         self.file_controls = FileControls(self, video_player=self.video_player, tags=self.tag_manager.get_tags())
+
+        # populate tag_controls categories from persisted file
+        self.tag_controls.categories = self.category_manager.get()
+        # self.tag_controls.update_category_buttons()
 
         self.player_controls.set_video_player(self.video_player)  # Set the video player
         self.tag_controls.set_video_player(self.video_player)
@@ -52,7 +61,7 @@ class VideoTaggerApp(QMainWindow):
         
         self.setup_ui()
         # build_menu extracted to helpers
-        build_menu(self)
+        self.helpers.setup_menu()   # << use helpers instance
         self.setup_connections()
         
     # menu building moved to src/ui/main_window_helpers.py
@@ -126,19 +135,6 @@ class VideoTaggerApp(QMainWindow):
         """Wrapper that delegates to common helper (keeps call sites intact)."""
         helper_edit_categories(self)
 
-    def _save_categories_to_file(self):
-        """Save current categories back to the JSON file"""
-        import os
-        import json
-        categories_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "categories.json")
-        try:
-            with open(categories_path, 'w', encoding='utf-8') as f:
-                json.dump(self.tag_controls.categories, f, indent=4, ensure_ascii=False)
-            self.logger.info("Categories saved successfully to categories.json")
-        except Exception as e:
-            self.logger.error(f"Error saving categories: {e}")
-            QMessageBox.warning(self, "Error", "Failed to save categories to file.")
-  
     def edit_time_settings(self):
         """Wrapper that delegates to common helper (keeps call sites intact)."""
         helper_edit_time_settings(self)

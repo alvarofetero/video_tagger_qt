@@ -120,8 +120,24 @@ class TagControls(QWidget, UIComponent):
         self.tag_layout.addLayout(button_grid)
 
     def update_category_buttons(self):
-        """Update the category buttons after category list changes"""
-        self.create_category_buttons()
+        """Refresh category buttons UI after categories change."""
+        # ensure categories list exists
+        if not hasattr(self, "categories"):
+            self.categories = ["General"]
+
+        # remove old buttons if present
+        if hasattr(self, "category_buttons"):
+            for btn in list(self.category_buttons.values()):
+                try:
+                    btn.setParent(None)
+                    btn.deleteLater()
+                except Exception:
+                    pass
+
+        # recreate buttons container and UI
+        self.category_buttons = {}
+        if hasattr(self, "create_category_buttons"):
+            self.create_category_buttons()
 
         # If there was an active category that still exists, restore its highlight
         if self.active_category and self.active_category in self.category_buttons:
