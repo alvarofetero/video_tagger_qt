@@ -25,6 +25,13 @@ class TagControls(QWidget, UIComponent):
         # Load categories from json file instead of hardcoding
         self.categories = load_categories()
         self.category_buttons = {}
+        
+        # store created QShortcut objects so they aren't GC'd
+        self._shortcuts = []
+        
+        # Optional: configure which keys map to categories (can be longer than categories)
+        # Examples: "1","2","3","A","B","C","F1","Ctrl+1"
+        self.shortcut_keys = [str(i+1) for i in range(9)]  # default 1..9
 
         # Initialize time adjustment values from config
         pre_duration, post_duration = get_tag_duration_config()
@@ -73,17 +80,25 @@ class TagControls(QWidget, UIComponent):
         btn.setProperty("category", category)
         btn.setProperty("index", index+1)
         
-        # Add number shortcut (1-9) if applicable
-        if index < 9:  # Only add shortcuts for first 9 categories
-            # Find the main window
+         # Add a shortcut if we have a configured key for this index
+        if index < len(self.shortcut_keys):
+            key_seq = self.shortcut_keys[index]
+            # Find the main window to attach the shortcut (so it works globally in the window)
             from PyQt5.QtWidgets import QMainWindow
             parent = self
             while parent and not isinstance(parent, QMainWindow):
                 parent = parent.parentWidget()
-            
-            if parent:  # If we found the main window
-                shortcut = QShortcut(QKeySequence(str(index + 1)), parent)
-                shortcut.activated.connect(lambda c=category: self.on_category_shortcut(c))
+            if parent:
+                try:
+                    shortcut = QShortcut(QKeySequence(key_seq), parent)
+                    shortcut.setContext(Qt.WidgetWithChildrenShortcut)
+                    # capture category in default arg to avoid late-binding issue
+                    shortcut.activated.connect(lambda c=category: self.on_category_shortcut(c))
+                    # keep a reference to prevent GC
+                    self._shortcuts.append(shortcut)
+                except Exception:
+                    # invalid key string -> ignore or log
+                    pass
             
         return btn
 
