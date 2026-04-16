@@ -6,6 +6,7 @@ from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QKeySequence
 from .base_component import UIComponent
 from src.config import load_categories, get_tag_duration_config
+from src.services.storage import CategoryClickTracker
 
 # class: TagControls
 # description: This class manages the tag controls for the video player, allowing users to create, end, and remove tags.
@@ -14,6 +15,7 @@ class TagControls(QWidget, UIComponent):
     tag_started = pyqtSignal(str, float) # Emits (category, start_time)
     tag_ended = pyqtSignal(str, float)   # Emits (category, end_time)
     tag_removed = pyqtSignal(int)        # Emits index of removed tag
+    
 
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
@@ -25,6 +27,9 @@ class TagControls(QWidget, UIComponent):
         # Load categories from json file instead of hardcoding
         self.categories = load_categories()
         self.category_buttons = {}
+        
+        # Initialize category click tracker
+        self.click_tracker = CategoryClickTracker()
         
         # store created QShortcut objects so they aren't GC'd
         self._shortcuts = []
@@ -73,7 +78,10 @@ class TagControls(QWidget, UIComponent):
 
     def create_category_button(self, category, index):
         """Create a single category button with proper setup"""
-        btn = QPushButton(f"{index+1}. {category}")
+        # Get click count for this category
+        click_count = self.click_tracker.get_count(category)
+        btn_text = f"{index+1}. {category} ({click_count})"
+        btn = QPushButton(btn_text)
         btn.setMinimumHeight(40)
         btn.setStyleSheet("font-size: 14px;")
         btn.clicked.connect(self.on_category_button_clicked)
@@ -174,9 +182,16 @@ class TagControls(QWidget, UIComponent):
             button.setStyleSheet("font-size: 16px;")  # Reset style
             self.active_category = None
         else:
-            # Start new tag
+            # Start new tag - increment click counter
+            click_count = self.click_tracker.increment(category)
+            
             adjusted_start = max(0, current_time - self.pre_spin.value())
             self.tag_started.emit(category, adjusted_start)
+            
+            # Update button text to show new click count
+            index = button.property("index") - 1
+            btn_text = f"{index+1}. {category} ({click_count})"
+            button.setText(btn_text)
             
             # Reset previous active button if exists
             if self.active_category and self.active_category in self.category_buttons:

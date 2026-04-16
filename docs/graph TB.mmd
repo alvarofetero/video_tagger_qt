@@ -1,0 +1,108 @@
+graph TB
+    subgraph "Main Application"
+        Main["main.py<br/>(Entry Point)"]
+    end
+
+    subgraph "UI Layer"
+        MainWindow["VideoTaggerApp<br/>(main_window.py)<br/>QMainWindow"]
+        PlayerControls["PlayerControls<br/>(video_player_controls_widget.py)"]
+        TagControls["TagControls<br/>(tag_widget.py)"]
+        FileControls["FileControls<br/>(file_controls_widget.py)"]
+        DrawingControls["DrawingControls<br/>(drawing_controls_widget.py)"]
+        MainWindowHelpers["MainWindowHelpers<br/>(main_window_helpers.py)"]
+        CategoryManager["CategoryManager<br/>(category_manager.py)"]
+        UIComponent["UIComponent<br/>(base_component.py)<br/>Abstract Base"]
+    end
+
+    subgraph "Core Components"
+        VideoPlayer["VideoPlayer<br/>(player.py)<br/>QWidget"]
+        TagManager["TagManager<br/>(tag_manager.py)"]
+        AnnotationOverlay["AnnotationOverlay<br/>(annotation_overlay.py)"]
+        TimelineWidget["TimelineWidget<br/>(timeline.py)"]
+        ExporterThread["ExporterThread<br/>(exporter.py)<br/>QThread"]
+    end
+
+    subgraph "Utilities"
+        Logger["Logger<br/>(logger.py)"]
+        AppLogger["AppLogger<br/>(utils/logger.py)"]
+        Config["Config<br/>(config.py)"]
+        Utils["Utils<br/>(utils/utils.py)"]
+    end
+
+    subgraph "External Dependencies"
+        PyQt5["PyQt5"]
+        VLC["VLC/python-vlc<br/>(or Mock)"]
+        FFmpeg["FFmpeg<br/>(for export)"]
+    end
+
+    subgraph "Testing"
+        Pytest["Pytest"]
+        MockVLC["MockVLC<br/>(vlc_mock.py)"]
+        MockObjects["Mock Objects<br/>(mock_objects.py)"]
+    end
+
+    %% Main initialization
+    Main -->|creates| MainWindow
+
+    %% MainWindow composition
+    MainWindow -->|owns| PlayerControls
+    MainWindow -->|owns| TagControls
+    MainWindow -->|owns| FileControls
+    MainWindow -->|owns| DrawingControls
+    MainWindow -->|owns| MainWindowHelpers
+    MainWindow -->|creates| TagManager
+    MainWindow -->|creates| VideoPlayer
+    MainWindow -->|creates| CategoryManager
+
+    %% Inheritance relationships
+    PlayerControls -->|extends| UIComponent
+    TagControls -->|extends| UIComponent
+    FileControls -->|extends| UIComponent
+
+    %% Component interactions
+    MainWindow -->|setup_connections| PlayerControls
+    MainWindow -->|setup_connections| TagControls
+    MainWindow -->|setup_connections| FileControls
+    
+    PlayerControls -->|controls| VideoPlayer
+    TagControls -->|emits signals| MainWindow
+    TagControls -->|gets time from| VideoPlayer
+    
+    FileControls -->|exports clips via| ExporterThread
+    FileControls -->|reads/writes| TagManager
+    
+    VideoPlayer -->|has| AnnotationOverlay
+    VideoPlayer -->|uses| DrawingControls
+    VideoPlayer -->|emits time_changed| TimelineWidget
+    
+    TimelineWidget -->|displays| TagManager
+    
+    MainWindowHelpers -->|manages| CategoryManager
+    MainWindowHelpers -->|edits| TagControls
+    
+    %% Configuration and utilities
+    TagControls -->|loads| Config
+    CategoryManager -->|loads/saves| Config
+    MainWindow -->|uses| Logger
+    MainWindow -->|uses| AppLogger
+    PlayerControls -->|updates| Utils
+    
+    %% External dependencies
+    VideoPlayer -->|uses| VLC
+    ExporterThread -->|calls| FFmpeg
+    
+    %% Testing connections
+    Pytest -->|tests| MainWindow
+    Pytest -->|mocks| MockVLC
+    Pytest -->|mocks| MockObjects
+    MockVLC -->|replaces| VLC
+
+    style Main fill:#222222
+    style MainWindow fill:#fff3e0
+    style VideoPlayer fill:#f3e5f5
+    style TagManager fill:#e8f5e9
+    style ExporterThread fill:#fce4ec
+    style Logger fill:#f1f8e9
+    style VLC fill:#ffe0b2
+    style FFmpeg fill:#ffe0b2
+    style Pytest fill:#c8e6c9

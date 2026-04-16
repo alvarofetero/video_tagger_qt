@@ -72,3 +72,14 @@ def load_categories(path=None):
     except Exception as e:
         print(f"Error loading categories: {e}")
         return ["General"]
+    
+def load_fieldparts(path=None):
+    if path is None:
+        # Resolve the path relative to the location of this file
+        path = os.path.join(os.path.dirname(__file__), "fieldparts.json")
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"Error loading fieldparts: {e}")
+        return ["Construction"]

@@ -12,6 +12,7 @@ from src.ui.tag_widget import TagControls
 from src.ui.file_controls_widget import FileControls
 from src.ui.drawing_controls_widget import DrawingControls
 from src.ui.category_manager import CategoryManager
+from src.ui.category_stats_widget import CategoryStatsWidget
 from src.ui.main_window_helpers import MainWindowHelpers
 
 from src.player import VideoPlayer
@@ -21,10 +22,13 @@ from src.tag_manager import TagManager
 ## Main application window for Video Tagger
 ## This class initializes the main window, sets up the UI components, and manages the application flow.
 class VideoTaggerApp(QMainWindow):
+    
+    #consturctor
     def __init__(self):
         super().__init__()
         self.logger = AppLogger.get_logger()
         self.logger.info("Starting Video Tagger application")
+       
         self.setWindowTitle("Video Tagger")
         self.setMinimumSize(1000, 600)
         
@@ -42,6 +46,7 @@ class VideoTaggerApp(QMainWindow):
         self.player_controls = PlayerControls(self)
         self.tag_controls = TagControls(self)
         self.drawing_controls = DrawingControls(self)
+        self.category_stats = CategoryStatsWidget(self)
         
         # Category manager and helpers
         self.category_manager = CategoryManager()                     # << new
@@ -83,6 +88,7 @@ class VideoTaggerApp(QMainWindow):
         # Add components
         self.player_controls.setup_ui(control_layout) ## call setup_ui on player_controls
         self.tag_controls.setup_ui(control_layout)  ## call setup_ui on tag_controls
+        control_layout.addWidget(self.category_stats)  ## Add stats widget
         self.file_controls.setup_ui(control_layout) ## call setup_ui on file_controls
         # self.drawing_controls.setup_ui()
         
@@ -116,6 +122,8 @@ class VideoTaggerApp(QMainWindow):
         # Tag controls
         self.tag_controls.tag_started.connect(self.on_tag_started)
         self.tag_controls.tag_ended.connect(self.on_tag_ended)
+        # Refresh stats when a tag is started
+        self.tag_controls.tag_started.connect(lambda *args: self.category_stats.refresh_stats())
 
         # Update file controls when tags change
         self.tag_controls.tag_started.connect(lambda *args: self.file_controls.set_tags(self.tag_manager.get_tags()))

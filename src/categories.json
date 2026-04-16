@@ -8,5 +8,7 @@
     "Defensa",
     "Presión t/pérdida",
     "ABP",
-    "Ataque posicional"
+    "Ataque estático",
+    "Trans def/ataque",
+    "Trans ata/def"
 ]
