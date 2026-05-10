@@ -4,3 +4,4 @@ logs/*
 src/ui/__pycache__/*
 src/utils/__pycache__/*
 tests/utils/__pycache__/*
+src/services/__pycache__/*
